@@ -4,591 +4,1021 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Primedic myAED Platform — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-:root{--bg:#0A1018;--card:rgba(255,255,255,0.02);--border:rgba(255,255,255,0.05);--text:#C8D3DE;--text2:#5A6B7D;--text3:#4A5C6E;--accent:#00B0FF;--green:#00E676;--yellow:#FFD600;--red:#FF5252;--purple:#7C4DFF;--mono:'JetBrains Mono',monospace;--sans:'IBM Plex Sans Thai','IBM Plex Sans',system-ui,sans-serif}
-*{margin:0;padding:0;box-sizing:border-box;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent}
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
-.header{background:rgba(10,16,24,0.97);border-bottom:1px solid rgba(255,255,255,0.04);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
-.header-left{display:flex;align-items:center;gap:12px}
-.header-logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#0091EA);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;font-family:var(--mono);box-shadow:0 0 20px rgba(0,176,255,0.25)}
-.header-title{font-size:14px;font-weight:700;color:#E8ECF1;letter-spacing:-0.02em}
-.header-sub{font-size:9.5px;color:var(--text3);font-weight:500;letter-spacing:0.06em;text-transform:uppercase}
-.demo-badge{background:rgba(255,214,0,0.08);border:1px solid rgba(255,214,0,0.2);border-radius:7px;padding:4px 10px;font-size:10px;color:var(--yellow);font-weight:600;display:flex;align-items:center;gap:5px}
-.demo-dot{width:5px;height:5px;border-radius:50%;background:var(--yellow);animation:blink 2s infinite}
-.layout{display:flex;min-height:calc(100vh - 56px)}
-.sidebar{width:180px;background:rgba(255,255,255,0.012);border-right:1px solid rgba(255,255,255,0.04);padding:16px 8px;flex-shrink:0;display:flex;flex-direction:column}
-.nav-btn{width:100%;display:flex;align-items:center;gap:9px;padding:9px 12px;margin-bottom:2px;border:none;border-radius:9px;cursor:pointer;font-size:12px;font-weight:400;font-family:inherit;transition:all 0.15s;background:transparent;color:var(--text2);border-left:3px solid transparent}
-.nav-btn.active{font-weight:600;background:rgba(0,176,255,0.1);color:var(--accent);border-left-color:var(--accent)}
-.nav-btn:hover:not(.active){background:rgba(255,255,255,0.03)}
-.nav-icon{font-size:14px;width:20px;text-align:center}
-.sidebar-info{margin:0 10px;padding:10px 12px;background:rgba(255,255,255,0.015);border-radius:8px;border:1px solid rgba(255,255,255,0.03);font-size:10px;color:var(--text3)}
-.sidebar-info-title{font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em}
-.main{flex:1;padding:20px 24px;overflow-y:auto;overflow-x:hidden}
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat-card{position:relative;overflow:hidden}
-.stat-card .bg-icon{position:absolute;top:-15px;right:-5px;font-size:50px;opacity:0.04}
-.stat-label{font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
-.stat-value{font-size:28px;font-weight:700;font-family:var(--mono);letter-spacing:-0.04em}
-.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.section-title h3{font-size:15px;font-weight:700;color:#E0E6ED;display:flex;align-items:center;gap:8px}
-.badge{padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;display:inline-block}
-.badge-online{background:rgba(0,230,118,0.08);color:var(--green);border:1px solid rgba(0,230,118,0.13)}
-.badge-warning{background:rgba(255,214,0,0.08);color:var(--yellow);border:1px solid rgba(255,214,0,0.13)}
-.badge-offline{background:rgba(255,82,82,0.08);color:var(--red);border:1px solid rgba(255,82,82,0.13)}
-.badge-critical{background:rgba(255,82,82,0.08);color:var(--red);border:1px solid rgba(255,82,82,0.13)}
-.badge-pending{background:rgba(124,77,255,0.08);color:var(--purple);border:1px solid rgba(124,77,255,0.13)}
-.badge-active{background:rgba(0,230,118,0.08);color:var(--green);border:1px solid rgba(0,230,118,0.13)}
-.badge-ok{background:rgba(0,230,118,0.08);color:var(--green);border:1px solid rgba(0,230,118,0.13)}
-.badge-info{background:rgba(0,176,255,0.08);color:var(--accent);border:1px solid rgba(0,176,255,0.13)}
-.btn{border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s}
-.btn-filled{background:linear-gradient(135deg,var(--accent),rgba(0,176,255,0.8));color:#fff;box-shadow:0 2px 12px rgba(0,176,255,0.3)}
-.btn-outline{background:rgba(0,176,255,0.06);border:1px solid rgba(0,176,255,0.2);color:var(--accent)}
-.btn-red{background:linear-gradient(135deg,#E74C3C,rgba(231,76,60,0.8));color:#fff;box-shadow:0 2px 12px rgba(231,76,60,0.3)}
-.btn-sm{padding:3px 10px;font-size:10px}
-.btn-full{width:100%;justify-content:center}
-.battery{display:flex;align-items:center;gap:5px;font-size:11px}
-.battery-shell{width:24px;height:11px;border-radius:2px;position:relative;display:flex;align-items:center;padding:1px}
-.battery-tip{position:absolute;right:-4px;top:2.5px;width:2.5px;height:5px;border-radius:0 1.5px 1.5px 0}
-.battery-fill{height:100%;border-radius:1px}
-.battery-text{font-weight:600;font-family:var(--mono)}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.device-row{display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:3px;border-radius:7px;cursor:pointer;transition:background 0.15s}
-.device-row:hover{background:rgba(0,176,255,0.04)}
-.dot{width:7px;height:7px;border-radius:50%}
-.dot-lg{width:8px;height:8px;border-radius:50%}
-.alert-row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:11px}
-.tab-content{display:none}.tab-content.active{display:block}
-/* Map */
-.map-layout{display:grid;grid-template-columns:1fr 280px;gap:12px;height:calc(100vh - 160px)}
-.map-container{padding:0;overflow:hidden}
-.map-list{overflow-y:auto;display:flex;flex-direction:column;gap:6px}
-.map-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all 0.15s}
-.map-item.selected{background:rgba(0,176,255,0.08);border-color:rgba(0,176,255,0.3)}
-.map-item-detail{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:10px;color:#6B7B8D;display:grid;gap:3px}
-.leaflet-container{background:var(--bg)!important}
-/* Monitor */
-.alert-card{display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:4px;border-radius:8px}
-.monitor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.monitor-device{border-radius:14px}
-.sparkline-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.sparkline-label{font-size:9px;color:var(--text3);margin-bottom:2px}
-/* Decoder */
-.dec-steps{display:flex;justify-content:center;gap:24px;margin-bottom:20px}
-.dec-step{display:flex;align-items:center;gap:6px}
-.dec-step-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;background:rgba(255,255,255,0.1)}
-.dec-step-dot.active{background:linear-gradient(135deg,#3498DB,#2980B9)}
-.dec-step-dot.done{background:#27AE60}
-.dropzone{border:2px dashed rgba(52,152,219,0.25);border-radius:14px;padding:40px 24px;text-align:center;cursor:pointer;background:rgba(52,152,219,0.03);margin-bottom:16px;transition:all 0.2s}
-.dropzone:hover{border-color:rgba(52,152,219,0.5)}
-.file-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:6px;overflow:hidden}
-.file-header{display:flex;align-items:center;padding:8px 12px;gap:8px}
-.file-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
-.hex-dump{background:rgba(0,0,0,0.25);padding:8px 12px;font-family:var(--mono);font-size:9.5px;line-height:1.5;color:#7DCEA0;overflow-x:auto;white-space:pre;max-height:160px;overflow-y:auto;border-top:1px solid rgba(255,255,255,0.04)}
-/* Device list */
-.device-card{border-radius:11px;padding:14px 18px;margin-bottom:8px;cursor:pointer;transition:all 0.15s}
-.device-card:hover{background:rgba(0,176,255,0.03)}
-.device-card.selected{background:rgba(0,176,255,0.05);border-color:rgba(0,176,255,0.2)}
-.device-detail{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 16px;font-size:11px}
-/* Customer */
-.cust-card{margin-bottom:8px}
-.cust-header{display:flex;align-items:center;gap:12px}
-.cust-avatar{width:38px;height:38px;border-radius:9px;background:rgba(124,77,255,0.08);border:1px solid rgba(124,77,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--purple)}
-.cust-actions{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
-.cust-tag{font-size:10px;color:var(--text2);font-family:var(--mono);background:rgba(255,255,255,0.03);padding:2px 7px;border-radius:4px}
-/* API */
-.api-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-.api-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;text-align:left;transition:all 0.15s;font-family:inherit}
-.api-btn:hover{border-color:rgba(0,176,255,0.3);background:rgba(0,176,255,0.05)}
-.api-panel{overflow:hidden;padding:0}
-.api-panel-header{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:8px}
-.api-panel-body{display:grid;grid-template-columns:1fr 1fr}
-.api-panel-side{padding:14px}
-.api-panel-side:first-child{border-right:1px solid rgba(255,255,255,0.04)}
-.api-label{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
-.api-code{margin:0;font-size:10px;line-height:1.5;font-family:var(--mono);white-space:pre-wrap}
-.api-log{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:11px}
-.api-method{background:rgba(0,176,255,0.1);color:var(--accent);padding:1px 7px;border-radius:3px;font-size:9px;font-weight:600;font-family:var(--mono)}
-/* Modal */
-.modal-overlay{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px)}
-.modal{position:relative;background:#111921;border:1px solid rgba(255,255,255,0.08);border-radius:16px;width:92%;max-width:560px;max-height:88vh;overflow:auto;padding:24px 28px}
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-.modal-header h3{margin:0;font-size:16px;font-weight:700;color:#E0E6ED}
-.modal-close{background:rgba(255,255,255,0.06);border:none;border-radius:8px;color:#8899AA;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
-.field{margin-bottom:12px}
-.field label{display:block;font-size:10px;color:#6B7B8D;margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em}
-.field input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 11px;color:#E0E6ED;font-size:12px;outline:none;font-family:inherit;transition:border-color 0.2s;box-sizing:border-box}
-.field input:focus{border-color:rgba(0,176,255,0.5)}
-.field input::placeholder{color:#3A4A5A}
-.field .req{color:var(--red)}
-/* Toast */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);z-index:2000;background:#1A2636;border:1px solid rgba(0,230,118,0.3);border-radius:10px;padding:10px 20px;font-size:13px;color:#B0F0C8;box-shadow:0 8px 32px rgba(0,0,0,0.5);opacity:0;transition:all .3s;pointer-events:none}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-/* Spinner */
-.spinner{position:relative;width:70px;height:70px;margin:0 auto 20px}
-.spinner-outer{position:absolute;inset:0;border:3px solid rgba(52,152,219,0.2);border-top-color:#3498DB;border-radius:50%;animation:spin 1s linear infinite}
-.spinner-inner{position:absolute;inset:8px;border:3px solid rgba(231,76,60,0.2);border-bottom-color:#E74C3C;border-radius:50%;animation:spin 1.5s linear infinite reverse}
-.spinner-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px}
-.dots{display:flex;gap:4px;justify-content:center;margin-top:16px}
-.dots span{width:7px;height:7px;border-radius:50%;background:#3498DB;animation:pulse 1.4s ease-in-out infinite}
-.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
-.dots span:nth-child(4){animation-delay:.6s}.dots span:nth-child(5){animation-delay:.8s}
-.back-link{text-decoration:none;color:var(--accent);font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(0,176,255,0.2);background:rgba(0,176,255,0.06);display:inline-flex;align-items:center;gap:4px}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0A1018;--bg2:#111827;--bg3:#1A2332;--card:#141C28;--border:rgba(255,255,255,0.05);--text:#C8D3DE;--text2:#8896A7;--online:#00E676;--warning:#FFD600;--offline:#FF5252;--accent:#00B0FF;--radius:14px}
+body{font-family:'IBM Plex Sans Thai','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+code,pre,.mono{font-family:'JetBrains Mono',monospace}
+
+/* Animations */
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse{0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:1}}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-@media(max-width:800px){.sidebar{display:none}.stats-grid{grid-template-columns:repeat(2,1fr)}.grid-2,.map-layout,.monitor-grid,.api-grid,.api-panel-body{grid-template-columns:1fr}.device-detail{grid-template-columns:1fr 1fr}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* Layout */
+.app{display:flex;height:100vh}
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:width .3s;flex-shrink:0;z-index:20}
+.sidebar.collapsed{width:56px}
+.sidebar.collapsed .nav-label,.sidebar.collapsed .sb-hdr-text,.sidebar.collapsed .sb-badge{display:none}
+.sidebar.collapsed .nav-item{justify-content:center;padding:12px 0}
+.sidebar.collapsed .nav-icon{margin:0}
+.sb-hdr{padding:16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.sb-hdr-icon{width:32px;height:32px;border-radius:8px;background:#FF5252;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sb-hdr-text{font-weight:700;font-size:13px;white-space:nowrap}
+.sb-badge{background:var(--accent);color:#000;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:auto}
+.nav{flex:1;padding:8px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;white-space:nowrap}
+.nav-item:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.nav-item.active{background:rgba(0,176,255,.12);color:var(--accent)}
+.nav-icon{width:20px;text-align:center;flex-shrink:0}
+.nav-label{flex:1}
+.sb-toggle{padding:12px;border-top:1px solid var(--border);text-align:center}
+.sb-toggle button{background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:4px 8px;border-radius:6px}
+.sb-toggle button:hover{background:rgba(255,255,255,.05)}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.header{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr-title{font-size:14px;font-weight:600}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.hdr-link{color:var(--accent);font-size:12px;text-decoration:none;padding:4px 10px;border:1px solid rgba(0,176,255,.3);border-radius:6px;transition:all .15s}
+.hdr-link:hover{background:rgba(0,176,255,.1)}
+.hdr-time{font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace}
+
+.content{flex:1;overflow-y:auto;padding:20px}
+.tab-content{display:none;animation:fadeIn .3s}
+.tab-content.active{display:block}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-grid{display:grid;gap:16px}
+.card-grid-4{grid-template-columns:repeat(4,1fr)}
+.card-grid-3{grid-template-columns:repeat(3,1fr)}
+.card-grid-2{grid-template-columns:repeat(2,1fr)}
+
+/* Stat cards */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;text-align:center}
+.stat-val{font-size:28px;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:11px;color:var(--text2)}
+.stat-icon{font-size:20px;margin-bottom:8px}
+
+/* Status */
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.status-dot.online{background:var(--online);box-shadow:0 0 6px var(--online)}
+.status-dot.warning{background:var(--warning);box-shadow:0 0 6px var(--warning);animation:pulse 2s infinite}
+.status-dot.offline{background:var(--offline);box-shadow:0 0 6px var(--offline)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-online{background:rgba(0,230,118,.15);color:var(--online)}
+.badge-warning{background:rgba(255,214,0,.15);color:var(--warning)}
+.badge-offline{background:rgba(255,82,82,.15);color:var(--offline)}
+.badge-accent{background:rgba(0,176,255,.15);color:var(--accent)}
+.badge-info{background:rgba(0,176,255,.12);color:var(--accent)}
+.badge-critical{background:rgba(255,82,82,.15);color:var(--offline)}
+
+/* Battery */
+.bat-bar{width:40px;height:14px;border:1px solid var(--text2);border-radius:3px;position:relative;display:inline-block;vertical-align:middle}
+.bat-bar::after{content:'';position:absolute;right:-4px;top:3px;width:3px;height:6px;background:var(--text2);border-radius:0 2px 2px 0}
+.bat-fill{height:100%;border-radius:2px;transition:width .3s}
+
+/* Device list */
+.dev-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all .15s;border-bottom:1px solid var(--border)}
+.dev-row:last-child{border-bottom:none}
+.dev-row:hover{background:rgba(255,255,255,.03)}
+.dev-info{flex:1;min-width:0}
+.dev-name{font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.dev-loc{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Alert rows */
+.alert-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:6px;font-size:12px}
+.alert-row.critical{background:rgba(255,82,82,.08);border-left:3px solid var(--offline)}
+.alert-row.warn{background:rgba(255,214,0,.08);border-left:3px solid var(--warning)}
+.alert-row.ok{background:rgba(0,230,118,.08);border-left:3px solid var(--online)}
+.alert-row.info{background:rgba(0,176,255,.08);border-left:3px solid var(--accent)}
+.alert-time{font-size:10px;color:var(--text2);margin-left:auto;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+
+/* Map */
+.map-wrap{display:flex;gap:16px;height:calc(100vh - 120px)}
+.map-sidebar{width:320px;overflow-y:auto;flex-shrink:0}
+.map-container{flex:1;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+#mapEl{height:100%;width:100%}
+.map-dev-card{padding:12px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px;cursor:pointer;transition:all .15s;background:var(--card)}
+.map-dev-card:hover,.map-dev-card.selected{background:var(--bg3);border-color:var(--accent)}
+.map-dev-detail{display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;line-height:1.8;color:var(--text2)}
+.map-dev-card.expanded .map-dev-detail{display:block}
+
+/* Monitoring */
+.mon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.mon-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative}
+.mon-card-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.sparkline{height:40px;display:flex;align-items:flex-end;gap:1px}
+.sparkline-bar{width:4px;background:var(--accent);border-radius:2px 2px 0 0;transition:height .3s}
+.sparkline-row{display:flex;gap:16px;margin-top:8px}
+.sparkline-group{flex:1}
+.sparkline-label{font-size:9px;color:var(--text2);margin-bottom:4px}
+
+/* Decoder */
+.dec-dropzone{border:2px dashed rgba(0,176,255,.3);border-radius:var(--radius);padding:48px 32px;text-align:center;cursor:pointer;transition:all .2s}
+.dec-dropzone:hover,.dec-dropzone.dragover{border-color:var(--accent);background:rgba(0,176,255,.05)}
+.dec-steps{display:flex;justify-content:center;gap:8px;margin-bottom:24px}
+.dec-step{display:flex;align-items:center;gap:6px}
+.dec-step-dot{width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;background:var(--bg3);color:var(--text2)}
+.dec-step-dot.active{background:var(--accent);color:#000}
+.dec-step-dot.done{background:var(--online);color:#000}
+.dec-step-label{font-size:11px;color:var(--text2)}
+.dec-step-label.active{color:var(--text);font-weight:600}
+.dec-step-line{width:24px;height:1px;background:var(--border)}
+.dec-step-line.done{background:var(--online)}
+.hex-viewer{font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.6;background:var(--bg);color:var(--online);padding:12px;border-radius:8px;overflow:auto;max-height:200px;white-space:pre;border:1px solid var(--border)}
+.dec-file-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px}
+.dec-file-row .fname{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500}
+.dec-file-row .fsize{font-size:10px;color:var(--text2)}
+.dec-file-row .fremove{background:none;border:none;color:var(--offline);cursor:pointer;font-size:16px;font-weight:700;margin-left:auto}
+.dec-report{background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border);padding:20px;overflow:auto;max-height:600px}
+
+/* Devices tab */
+.device-expand{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden}
+.device-expand-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:background .15s}
+.device-expand-hdr:hover{background:rgba(255,255,255,.03)}
+.device-expand-body{display:none;padding:0 16px 16px;font-size:12px;line-height:1.8;color:var(--text2);border-top:1px solid var(--border)}
+.device-expand.open .device-expand-body{display:block}
+.device-expand-arrow{transition:transform .2s;color:var(--text2)}
+.device-expand.open .device-expand-arrow{transform:rotate(90deg)}
+
+/* Customer cards */
+.cust-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:12px}
+.cust-hdr{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.cust-avatar{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.cust-name{font-weight:600;font-size:14px}
+.cust-meta{font-size:11px;color:var(--text2)}
+.cust-stats{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.cust-stat{text-align:center;flex:1}
+.cust-stat-val{font-size:16px;font-weight:700}
+.cust-stat-lbl{font-size:10px;color:var(--text2)}
+
+/* API Console */
+.api-btn{padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text);cursor:pointer;font-size:12px;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.api-btn:hover{border-color:var(--accent);background:rgba(0,176,255,.08)}
+.api-viewer{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:11px;max-height:300px;overflow:auto;white-space:pre-wrap;line-height:1.6}
+.api-log-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:11px}
+.api-method{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:10px;padding:2px 6px;border-radius:3px}
+.api-method.get{background:rgba(0,230,118,.15);color:var(--online)}
+.api-method.post{background:rgba(0,176,255,.15);color:var(--accent)}
+.api-method.delete{background:rgba(255,82,82,.15);color:var(--offline)}
+
+/* Buttons */
+.btn{padding:8px 16px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{background:#33c0ff}
+.btn-danger{background:var(--offline);color:#FFF}
+.btn-success{background:var(--online);color:#000}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;animation:fadeIn .2s}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);max-width:520px;width:100%;max-height:85vh;overflow:auto;padding:24px;animation:slideUp .3s}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px}
+.field{margin-bottom:12px}
+.field label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+
+/* Toast */
+.toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{padding:10px 20px;border-radius:10px;font-size:12px;font-weight:500;animation:slideUp .3s;display:flex;align-items:center;gap:8px;max-width:400px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast-success{background:rgba(0,230,118,.15);color:var(--online);border:1px solid rgba(0,230,118,.3)}
+.toast-error{background:rgba(255,82,82,.15);color:var(--offline);border:1px solid rgba(255,82,82,.3)}
+.toast-info{background:rgba(0,176,255,.15);color:var(--accent);border:1px solid rgba(0,176,255,.3)}
+.toast-warning{background:rgba(255,214,0,.15);color:var(--warning);border:1px solid rgba(255,214,0,.3)}
+
+/* Loading spinner */
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+
+/* Responsive */
+@media(max-width:900px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:30;transform:translateX(-100%);transition:transform .3s}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .card-grid-4{grid-template-columns:repeat(2,1fr)}
+  .map-wrap{flex-direction:column;height:auto}
+  .map-sidebar{width:100%;max-height:200px}
+  .map-container{height:400px}
+  .mon-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .card-grid-4,.card-grid-3,.card-grid-2{grid-template-columns:1fr}
+}
+
+/* Leaflet popup */
+.leaflet-popup-content-wrapper{background:var(--bg2)!important;color:var(--text)!important;border:1px solid var(--border)!important;border-radius:10px!important;font-family:'IBM Plex Sans Thai',sans-serif!important}
+.leaflet-popup-tip{background:var(--bg2)!important}
+.leaflet-popup-content{font-size:12px!important;line-height:1.6!important}
 </style>
 </head>
 <body>
-<!-- Toast -->
-<div class="toast" id="toast"></div>
+<div class="app">
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+<div class="sb-hdr">
+<div class="sb-hdr-icon">&#9829;</div>
+<span class="sb-hdr-text">myAED Platform</span>
+<span class="sb-badge">DEMO</span>
+</div>
+<nav class="nav" id="navItems">
+<div class="nav-item active" data-tab="overview" onclick="switchTab('overview')">
+<span class="nav-icon">&#9632;</span><span class="nav-label">&#3616;&#3634;&#3614;&#3619;&#3623;&#3617; Overview</span>
+</div>
+<div class="nav-item" data-tab="map" onclick="switchTab('map')">
+<span class="nav-icon">&#9678;</span><span class="nav-label">&#3649;&#3612;&#3609;&#3607;&#3637;&#3656; Map</span>
+</div>
+<div class="nav-item" data-tab="monitoring" onclick="switchTab('monitoring')">
+<span class="nav-icon">&#9881;</span><span class="nav-label">Monitoring</span>
+</div>
+<div class="nav-item" data-tab="decoder" onclick="switchTab('decoder')">
+<span class="nav-icon">&#9998;</span><span class="nav-label">AED Decoder</span>
+</div>
+<div class="nav-item" data-tab="devices" onclick="switchTab('devices')">
+<span class="nav-icon">&#9830;</span><span class="nav-label">&#3648;&#3588;&#3619;&#3639;&#3656;&#3629;&#3591; AED</span>
+</div>
+<div class="nav-item" data-tab="customers" onclick="switchTab('customers')">
+<span class="nav-icon">&#9734;</span><span class="nav-label">&#3621;&#3641;&#3585;&#3588;&#3657;&#3634; Customers</span>
+</div>
+<div class="nav-item" data-tab="apiconsole" onclick="switchTab('apiconsole')">
+<span class="nav-icon">&gt;_</span><span class="nav-label">API Console</span>
+</div>
+</nav>
+<div class="sb-toggle">
+<button onclick="toggleSidebar()" title="Toggle sidebar">&#9776;</button>
+</div>
+</aside>
 
-<!-- Header -->
+<!-- Main content -->
+<div class="main">
 <header class="header">
-  <div class="header-left">
-    <div class="header-logo">P</div>
-    <div>
-      <div class="header-title">Primedic myAED Platform</div>
-      <div class="header-sub">IOT Control · Map · Decoder · Monitor</div>
-    </div>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <a href="/index.html" class="back-link">← AED Decoder</a>
-    <div class="demo-badge"><span class="demo-dot"></span>DEMO</div>
-  </div>
+<div class="hdr-left">
+<button onclick="toggleMobileSidebar()" style="background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;display:none" id="menuBtn">&#9776;</button>
+<span class="hdr-title">Primedic myAED Platform</span>
+<span class="sb-badge">DEMO</span>
+</div>
+<div class="hdr-right">
+<a href="index.html" class="hdr-link">&#9664; AED Decoder</a>
+<span class="hdr-time" id="clockEl"></span>
+</div>
 </header>
 
-<div class="layout">
-  <!-- Sidebar -->
-  <nav class="sidebar">
-    <button class="nav-btn active" onclick="switchTab('overview')" id="nav-overview"><span class="nav-icon">◉</span>ภาพรวม</button>
-    <button class="nav-btn" onclick="switchTab('map')" id="nav-map"><span class="nav-icon">⊕</span>แผนที่</button>
-    <button class="nav-btn" onclick="switchTab('monitor')" id="nav-monitor"><span class="nav-icon">◈</span>Monitoring</button>
-    <button class="nav-btn" onclick="switchTab('decoder')" id="nav-decoder"><span class="nav-icon">⚡</span>AED Decoder</button>
-    <button class="nav-btn" onclick="switchTab('devices')" id="nav-devices"><span class="nav-icon">◇</span>เครื่อง AED</button>
-    <button class="nav-btn" onclick="switchTab('customers')" id="nav-customers"><span class="nav-icon">◎</span>ลูกค้า</button>
-    <button class="nav-btn" onclick="switchTab('api')" id="nav-api"><span class="nav-icon">⟐</span>API Console</button>
-    <div style="flex:1"></div>
-    <div class="sidebar-info">
-      <div class="sidebar-info-title">API</div>
-      appKey: <span style="color:var(--accent);font-family:var(--mono)">demo_***</span><br>
-      Mode: <span style="color:var(--yellow)">Mock</span>
-    </div>
-  </nav>
-
-  <!-- Main Content -->
-  <main class="main" id="mainContent"></main>
+<div class="content">
+<!-- ===== OVERVIEW TAB ===== -->
+<div class="tab-content active" id="tab-overview">
+<div class="card-grid card-grid-4" style="margin-bottom:16px">
+<div class="stat-card"><div class="stat-icon">&#128293;</div><div class="stat-val" style="color:var(--accent)">8</div><div class="stat-label">Total Devices</div></div>
+<div class="stat-card"><div class="stat-icon">&#9989;</div><div class="stat-val" style="color:var(--online)">6</div><div class="stat-label">Online</div></div>
+<div class="stat-card"><div class="stat-icon">&#9888;</div><div class="stat-val" style="color:var(--warning)">1</div><div class="stat-label">Warnings</div></div>
+<div class="stat-card"><div class="stat-icon">&#128101;</div><div class="stat-val" style="color:var(--accent)">5</div><div class="stat-label">Customers</div></div>
 </div>
 
-<!-- Modals -->
-<div class="modal-overlay" id="modalAddCust">
-  <div class="modal-bg" onclick="closeModal('modalAddCust')"></div>
-  <div class="modal">
-    <div class="modal-header"><h3>เพิ่มลูกค้า — /openapi/customer</h3><button class="modal-close" onclick="closeModal('modalAddCust')">✕</button></div>
-    <div style="font-size:10px;color:var(--text3);margin-bottom:12px;font-family:var(--mono);background:rgba(0,176,255,0.04);padding:5px 9px;border-radius:5px">POST · optType: "C"</div>
-    <div class="field"><label>ชื่อลูกค้า <span class="req">*</span></label><input id="nc_name" placeholder="โรงพยาบาล..."></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="field"><label>ประเทศ</label><input id="nc_country" value="Thailand"></div>
-      <div class="field"><label>จังหวัด</label><input id="nc_region" placeholder="Bangkok"></div>
-    </div>
-    <div class="field"><label>ผู้ติดต่อ</label><input id="nc_contact" placeholder="ชื่อ"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="field"><label>โทร</label><input id="nc_phone" placeholder="+66..."></div>
-      <div class="field"><label>Email</label><input id="nc_email" placeholder="email" type="email"></div>
-    </div>
-    <button class="btn btn-filled btn-full" style="padding:11px;margin-top:6px" onclick="mockApi('/openapi/customer','C');closeModal('modalAddCust')">ส่งคำสั่ง CREATE</button>
-  </div>
+<div class="card-grid card-grid-2">
+<div class="card">
+<div class="card-title">&#128994; Device Status</div>
+<div id="overviewDevices"></div>
+</div>
+<div>
+<div class="card">
+<div class="card-title">&#128680; Active Alerts</div>
+<div id="overviewAlerts"></div>
+</div>
+<div class="card">
+<div class="card-title">&#128225; Recent API Calls</div>
+<div id="overviewApiCalls"></div>
+</div>
+</div>
+</div>
 </div>
 
-<div class="modal-overlay" id="modalAddDev">
-  <div class="modal-bg" onclick="closeModal('modalAddDev')"></div>
-  <div class="modal">
-    <div class="modal-header"><h3>ลงทะเบียนเครื่อง — /openapi/device-installation</h3><button class="modal-close" onclick="closeModal('modalAddDev')">✕</button></div>
-    <div style="font-size:10px;color:var(--text3);margin-bottom:12px;font-family:var(--mono);background:rgba(0,176,255,0.04);padding:5px 9px;border-radius:5px">POST · optType: "C"</div>
-    <div class="field"><label>Device S/N <span class="req">*</span></label><input id="nd_sn" placeholder="HS0Y..."></div>
-    <div class="field"><label>รุ่น</label><input id="nd_model" value="HeartSave Y"></div>
-    <div class="field"><label>Customer Code <span class="req">*</span></label><input id="nd_cust" placeholder="c011..."></div>
-    <div class="field"><label>ตำแหน่ง</label><input id="nd_loc" placeholder="ล็อบบี้ชั้น 1"></div>
-    <div class="field"><label>วันติดตั้ง</label><input id="nd_date" placeholder="YYYY-MM-DD"></div>
-    <button class="btn btn-filled btn-full" style="padding:11px;margin-top:6px" onclick="mockApi('/openapi/device-installation','C');closeModal('modalAddDev')">ส่งคำสั่ง CREATE</button>
-  </div>
+<!-- ===== MAP TAB ===== -->
+<div class="tab-content" id="tab-map">
+<div class="map-wrap">
+<div class="map-sidebar" id="mapDevList"></div>
+<div class="map-container"><div id="mapEl"></div></div>
+</div>
+</div>
+
+<!-- ===== MONITORING TAB ===== -->
+<div class="tab-content" id="tab-monitoring">
+<div class="card" style="margin-bottom:16px">
+<div class="card-title">&#128680; Real-time Alerts</div>
+<div id="monAlerts"></div>
+</div>
+<div class="mon-grid" id="monGrid"></div>
+</div>
+
+<!-- ===== DECODER TAB ===== -->
+<div class="tab-content" id="tab-decoder">
+<div class="dec-steps" id="decSteps"></div>
+
+<div id="decUpload">
+<div class="dec-dropzone" id="decDropzone" onclick="document.getElementById('decFileInput').click()" ondrop="decHandleDrop(event)" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')">
+<div style="font-size:32px;margin-bottom:8px">&#128193;</div>
+<div style="font-size:14px;font-weight:600;margin-bottom:4px">Drop AED files here or click to browse</div>
+<div style="font-size:11px;color:var(--text2)">event.bin, cpr*.bin, ecg*.bin, syslog.bin, user.json</div>
+</div>
+<input type="file" id="decFileInput" multiple style="display:none" onchange="decHandleFiles(this.files)" accept=".bin,.json,.dat,.idx">
+
+<div id="decFileList" style="margin-top:16px;display:none"></div>
+<div style="margin-top:16px;text-align:right" id="decUploadActions" style="display:none">
+<button class="btn btn-primary" onclick="decStartDecode()" id="decStartBtn" disabled>Decode Files</button>
+</div>
+</div>
+
+<div id="decDecoding" style="display:none;text-align:center;padding:40px">
+<div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto 16px"></div>
+<div style="font-size:14px;font-weight:600;margin-bottom:8px" id="decProgress">Preparing...</div>
+<div style="font-size:11px;color:var(--text2)">AI is analyzing your AED data</div>
+</div>
+
+<div id="decReport" style="display:none">
+<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+<button class="btn btn-primary" onclick="decPrint()">&#128424; Print Report</button>
+<button class="btn btn-outline" onclick="decDownloadHTML()">&#128190; Download HTML</button>
+<button class="btn btn-outline" onclick="decDownloadJSON()">&#128190; Download JSON</button>
+<button class="btn btn-danger" onclick="decReset()" style="margin-left:auto">Reset</button>
+</div>
+<div class="dec-report" id="decReportContent"></div>
+</div>
+</div>
+
+<!-- ===== DEVICES TAB ===== -->
+<div class="tab-content" id="tab-devices">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<span style="font-size:16px;font-weight:700">Registered Devices</span>
+<button class="btn btn-primary" onclick="showModal('addDeviceModal')">+ Register Device</button>
+</div>
+<div id="devicesListEl"></div>
+</div>
+
+<!-- ===== CUSTOMERS TAB ===== -->
+<div class="tab-content" id="tab-customers">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<span style="font-size:16px;font-weight:700">Customer Accounts</span>
+<button class="btn btn-primary" onclick="showModal('addCustomerModal')">+ Add Customer</button>
+</div>
+<div id="customersListEl"></div>
+</div>
+
+<!-- ===== API CONSOLE TAB ===== -->
+<div class="tab-content" id="tab-apiconsole">
+<div class="card">
+<div class="card-title">&gt;_ Quick Actions</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+<button class="api-btn" onclick="apiCall('GET','/api/devices')">GET /api/devices</button>
+<button class="api-btn" onclick="apiCall('GET','/api/devices/HS0Y824800155')">GET /api/devices/:id</button>
+<button class="api-btn" onclick="apiCall('GET','/api/customers')">GET /api/customers</button>
+<button class="api-btn" onclick="apiCall('GET','/api/alerts')">GET /api/alerts</button>
+<button class="api-btn" onclick="apiCall('POST','/api/devices/ping')">POST /api/devices/ping</button>
+<button class="api-btn" onclick="apiCall('POST','/api/decode')">POST /api/decode</button>
+</div>
+</div>
+<div class="card-grid card-grid-2" style="margin-top:16px">
+<div class="card">
+<div class="card-title">Request / Response</div>
+<div class="api-viewer" id="apiViewer" style="min-height:200px"><span style="color:var(--text2)">// Click a quick action to see the response</span></div>
+</div>
+<div class="card">
+<div class="card-title">Call History</div>
+<div id="apiHistory"></div>
+</div>
+</div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Add Device Modal -->
+<div class="modal-overlay" id="addDeviceModal">
+<div class="modal">
+<div class="modal-title">Register New Device <button class="modal-close" onclick="hideModal('addDeviceModal')">&times;</button></div>
+<div class="field"><label>Serial Number</label><input type="text" placeholder="e.g. HS0Y824800155"></div>
+<div class="field"><label>Model</label><select><option>HeartSave Y</option><option>myPAD BSD</option><option>HeartSave ONE</option></select></div>
+<div class="field"><label>Customer</label><select><option>&#3650;&#3619;&#3591;&#3614;&#3618;&#3634;&#3610;&#3634;&#3621;&#3585;&#3619;&#3640;&#3591;&#3648;&#3607;&#3614;</option><option>Central Festival Pattaya</option><option>&#3617;&#3627;&#3634;&#3623;&#3636;&#3607;&#3618;&#3634;&#3621;&#3633;&#3618;&#3617;&#3627;&#3636;&#3604;&#3621;</option><option>Siam Paragon</option><option>Galeria Kaufhof Munich</option></select></div>
+<div class="field"><label>Location Description</label><input type="text" placeholder="e.g. Lobby Floor 1"></div>
+<div class="field"><label>Latitude</label><input type="number" step="0.0001" placeholder="13.7467"></div>
+<div class="field"><label>Longitude</label><input type="number" step="0.0001" placeholder="100.5381"></div>
+<div style="text-align:right;margin-top:16px">
+<button class="btn btn-outline" onclick="hideModal('addDeviceModal')" style="margin-right:8px">Cancel</button>
+<button class="btn btn-primary" onclick="hideModal('addDeviceModal');toast('Device registered (demo)','success')">Register</button>
+</div>
+</div>
+</div>
+
+<!-- Add Customer Modal -->
+<div class="modal-overlay" id="addCustomerModal">
+<div class="modal">
+<div class="modal-title">Add Customer <button class="modal-close" onclick="hideModal('addCustomerModal')">&times;</button></div>
+<div class="field"><label>Company / Organization</label><input type="text" placeholder="e.g. Hospital name"></div>
+<div class="field"><label>Contact Person</label><input type="text"></div>
+<div class="field"><label>Email</label><input type="email"></div>
+<div class="field"><label>Phone</label><input type="tel"></div>
+<div class="field"><label>Province / City</label><input type="text"></div>
+<div class="field"><label>Country</label><select><option>Thailand</option><option>Germany</option><option>Other</option></select></div>
+<div style="text-align:right;margin-top:16px">
+<button class="btn btn-outline" onclick="hideModal('addCustomerModal')" style="margin-right:8px">Cancel</button>
+<button class="btn btn-primary" onclick="hideModal('addCustomerModal');toast('Customer added (demo)','success')">Add Customer</button>
+</div>
+</div>
 </div>
 
 <script>
-// ─── DATA ─────────────────────────────────────────────
-const CUSTOMERS=[
-  {id:"c011",name:"โรงพยาบาลกรุงเทพ สำนักงานใหญ่",country:"Thailand",region:"Bangkok",province:"Bangkok",contact:"ดร.สมชาย วงศ์แพทย์",phone:"+66 2-310-3000",email:"somchai@bgh.co.th",devices:12,status:"active"},
-  {id:"c012",name:"Central Festival Pattaya",country:"Thailand",region:"Chonburi",province:"Pattaya",contact:"คุณวิภา จันทร์ศรี",phone:"+66 38-003-999",email:"vipa@central.co.th",devices:4,status:"active"},
-  {id:"c013",name:"มหาวิทยาลัยมหิดล",country:"Thailand",region:"Nakhon Pathom",province:"Salaya",contact:"ผศ.ดร.นภา อรุณเรือง",phone:"+66 2-441-0000",email:"napa@mahidol.ac.th",devices:8,status:"active"},
-  {id:"c014",name:"Siam Paragon",country:"Thailand",region:"Bangkok",province:"Pathumwan",contact:"คุณพิชัย สยามรัตน์",phone:"+66 2-690-1000",email:"pichai@siampiwat.com",devices:6,status:"active"},
-  {id:"c015",name:"Galeria Kaufhof Munich",country:"Germany",region:"Bavaria",province:"Munich",contact:"Lucas Weber",phone:"+49 188464895",email:"lucas@web.de",devices:3,status:"pending"}
+// ==================== MOCK DATA ====================
+const CUSTOMERS = [
+  {id:'c011',name:'โรงพยาบาลกรุงเทพ สำนักงานใหญ่',city:'Bangkok',contact:'ดร.สมชาย วงศ์แพทย์',devices:12,status:'active',email:'somchai@bgh.co.th',phone:'02-310-3000',emoji:'&#127973;'},
+  {id:'c012',name:'Central Festival Pattaya',city:'Chonburi',contact:'คุณวิภา จันทร์ศรี',devices:4,status:'active',email:'wipa@central.co.th',phone:'038-003-999',emoji:'&#127978;'},
+  {id:'c013',name:'มหาวิทยาลัยมหิดล',city:'Nakhon Pathom',contact:'ผศ.ดร.นภา อรุณเรือง',devices:8,status:'active',email:'napa@mahidol.ac.th',phone:'02-441-0000',emoji:'&#127979;'},
+  {id:'c014',name:'Siam Paragon',city:'Bangkok',contact:'คุณพิชัย สยามรัตน์',devices:6,status:'active',email:'pichai@siampiwat.com',phone:'02-610-8000',emoji:'&#127978;'},
+  {id:'c015',name:'Galeria Kaufhof Munich',city:'Germany',contact:'Lucas Weber',devices:3,status:'pending',email:'l.weber@kaufhof.de',phone:'+49-89-231851',emoji:'&#127979;'}
 ];
 
-const DEVICES=[
-  {sn:"HS0Y824800155",brand:"Primedic",model:"HeartSave Y",custId:"c011",customer:"รพ.กรุงเทพ",installDate:"2024-03-15",location:"ล็อบบี้ชั้น 1 อาคาร A",lat:13.7467,lng:100.5381,status:"online",battery:94,lastCheck:"2026-03-28",temp:24,humidity:55,padExpiry:"2027-06",lastEvent:null},
-  {sn:"HS0Y824800201",brand:"Primedic",model:"HeartSave Y",custId:"c011",customer:"รพ.กรุงเทพ",installDate:"2024-03-15",location:"ห้องฉุกเฉิน ชั้น 1",lat:13.7469,lng:100.5384,status:"online",battery:87,lastCheck:"2026-03-28",temp:23,humidity:52,padExpiry:"2027-06",lastEvent:"2026-03-03"},
-  {sn:"MP0B742530001",brand:"Primedic",model:"myPAD BSD",custId:"c012",customer:"Central Pattaya",installDate:"2024-06-20",location:"ชั้น 2 Food Court",lat:12.9467,lng:100.8885,status:"online",battery:72,lastCheck:"2026-03-25",temp:26,humidity:60,padExpiry:"2026-12",lastEvent:null},
-  {sn:"MP0B742530002",brand:"Primedic",model:"myPAD BSD",custId:"c012",customer:"Central Pattaya",installDate:"2024-06-20",location:"ชั้น G ทางเข้าหลัก",lat:12.9465,lng:100.8882,status:"warning",battery:31,lastCheck:"2026-03-10",temp:27,humidity:63,padExpiry:"2026-08",lastEvent:null},
-  {sn:"HS0Y824800302",brand:"Primedic",model:"HeartSave Y",custId:"c013",customer:"ม.มหิดล",installDate:"2024-01-10",location:"อาคารคณะแพทย์ ชั้น 1",lat:13.7942,lng:100.3229,status:"online",battery:98,lastCheck:"2026-03-30",temp:25,humidity:48,padExpiry:"2027-01",lastEvent:null},
-  {sn:"HS0Y824800303",brand:"Primedic",model:"HeartSave Y",custId:"c013",customer:"ม.มหิดล",installDate:"2024-01-10",location:"สนามกีฬา",lat:13.7955,lng:100.3241,status:"offline",battery:0,lastCheck:"2026-02-15",temp:null,humidity:null,padExpiry:"2026-06",lastEvent:null},
-  {sn:"MP0B742530010",brand:"Primedic",model:"myPAD BSD",custId:"c014",customer:"Siam Paragon",installDate:"2025-01-05",location:"ชั้น M จุดประชาสัมพันธ์",lat:13.7462,lng:100.5347,status:"online",battery:85,lastCheck:"2026-03-29",temp:22,humidity:50,padExpiry:"2027-05",lastEvent:null},
-  {sn:"A2558000001",brand:"Primedic",model:"myPAD BSD",custId:"c015",customer:"Kaufhof Munich",installDate:"2025-09-03",location:"Ground Floor Entrance",lat:48.1371,lng:11.5754,status:"online",battery:90,lastCheck:"2026-03-27",temp:19,humidity:42,padExpiry:"2027-09",lastEvent:null}
+const DEVICES = [
+  {serial:'HS0Y824800155',model:'HeartSave Y',customer:'รพ.กรุงเทพ',location:'ล็อบบี้ชั้น 1',lat:13.7467,lng:100.5381,status:'online',battery:94,custId:'c011'},
+  {serial:'HS0Y824800201',model:'HeartSave Y',customer:'รพ.กรุงเทพ',location:'ห้องฉุกเฉิน',lat:13.7469,lng:100.5384,status:'online',battery:87,custId:'c011'},
+  {serial:'MP0B742530001',model:'myPAD BSD',customer:'Central Pattaya',location:'ชั้น 2 Food Court',lat:12.9467,lng:100.8885,status:'online',battery:72,custId:'c012'},
+  {serial:'MP0B742530002',model:'myPAD BSD',customer:'Central Pattaya',location:'ชั้น G ทางเข้าหลัก',lat:12.9465,lng:100.8882,status:'warning',battery:31,custId:'c012'},
+  {serial:'HS0Y824800302',model:'HeartSave Y',customer:'ม.มหิดล',location:'อาคารคณะแพทย์',lat:13.7942,lng:100.3229,status:'online',battery:98,custId:'c013'},
+  {serial:'HS0Y824800303',model:'HeartSave Y',customer:'ม.มหิดล',location:'สนามกีฬา',lat:13.7955,lng:100.3241,status:'offline',battery:0,custId:'c013'},
+  {serial:'MP0B742530010',model:'myPAD BSD',customer:'Siam Paragon',location:'ชั้น M จุดประชาสัมพันธ์',lat:13.7462,lng:100.5347,status:'online',battery:85,custId:'c014'},
+  {serial:'A2558000001',model:'myPAD BSD',customer:'Kaufhof Munich',location:'Ground Floor',lat:48.1371,lng:11.5754,status:'online',battery:90,custId:'c015'}
 ];
 
-const ALERTS=[
-  {id:1,time:"14:32",type:"battery",sn:"MP0B742530002",msg:"แบตเตอรี่ต่ำ 31% — ควรเปลี่ยนภายใน 30 วัน",severity:"warning"},
-  {id:2,time:"13:15",type:"offline",sn:"HS0Y824800303",msg:"เครื่องออฟไลน์มากกว่า 45 วัน — ตรวจสอบด่วน",severity:"critical"},
-  {id:3,time:"12:00",type:"pad",sn:"MP0B742530002",msg:"แผ่น Pad หมดอายุ ส.ค. 2569 — ใกล้หมดอายุ",severity:"warning"},
-  {id:4,time:"10:45",type:"pad",sn:"HS0Y824800303",msg:"แผ่น Pad หมดอายุ มิ.ย. 2569 — หมดอายุแล้ว!",severity:"critical"},
-  {id:5,time:"09:30",type:"selftest",sn:"HS0Y824800155",msg:"Self-test ผ่านเรียบร้อย",severity:"ok"},
-  {id:6,time:"09:28",type:"selftest",sn:"MP0B742530010",msg:"Self-test ผ่านเรียบร้อย",severity:"ok"},
-  {id:7,time:"08:00",type:"event",sn:"HS0Y824800201",msg:"มี Event Log ใหม่จากเหตุการณ์ 3 มี.ค. 2569",severity:"info"}
+const ALERTS = [
+  {type:'warning',severity:'warning',device:'MP0B742530002',msg:'แบตเตอรี่ต่ำ 31%',time:'14:32',icon:'&#128267;'},
+  {type:'critical',severity:'critical',device:'HS0Y824800303',msg:'ออฟไลน์ >45 วัน',time:'08:00',icon:'&#128308;'},
+  {type:'warning',severity:'warning',device:'MP0B742530002',msg:'Pad ใกล้หมดอายุ',time:'14:30',icon:'&#9888;'},
+  {type:'critical',severity:'critical',device:'HS0Y824800303',msg:'Pad หมดอายุแล้ว',time:'08:00',icon:'&#128308;'},
+  {type:'ok',severity:'ok',device:'HS0Y824800155',msg:'Self-test passed',time:'06:00',icon:'&#9989;'},
+  {type:'ok',severity:'ok',device:'MP0B742530010',msg:'Self-test passed',time:'06:02',icon:'&#9989;'},
+  {type:'info',severity:'info',device:'HS0Y824800201',msg:'มี Event Log ใหม่',time:'11:15',icon:'&#128196;'}
 ];
 
-const API_LOGS=[
-  {time:"14:32:05",method:"POST",endpoint:"/openapi/customer",status:200,duration:"120ms",size:"1.2KB"},
-  {time:"14:32:06",method:"POST",endpoint:"/openapi/device-installation",status:200,duration:"95ms",size:"0.8KB"},
-  {time:"14:33:12",method:"POST",endpoint:"/openapi/customer",status:200,duration:"110ms",size:"1.1KB"},
-  {time:"14:35:44",method:"POST",endpoint:"/openapi/device-installation",status:200,duration:"88ms",size:"0.9KB"},
-  {time:"14:36:01",method:"POST",endpoint:"/openapi/customer",status:401,duration:"45ms",size:"0.2KB"}
-];
-
-const ST={online:{color:"#00E676",label:"Online"},warning:{color:"#FFD600",label:"Warning"},offline:{color:"#FF5252",label:"Offline"},critical:{color:"#FF5252",label:"Critical"},pending:{color:"#7C4DFF",label:"Pending"},active:{color:"#00E676",label:"Active"},ok:{color:"#00E676",label:"OK"},info:{color:"#00B0FF",label:"Info"}};
-
-const FILE_TYPES={event:{icon:"⚡",label:"Event Log",color:"#E74C3C"},cpr:{icon:"💓",label:"CPR Data",color:"#3498DB"},ecg:{icon:"📈",label:"ECG Waveform",color:"#9B59B6"},syslog:{icon:"🔧",label:"System Log",color:"#27AE60"},user:{icon:"👤",label:"User Info",color:"#F39C12"}};
-
-// ─── STATE ────────────────────────────────────────────
-let currentTab="overview",selectedDevice=null,mapInstance=null,markers=[];
-let decFiles=[],decHex={},decReport=null,decStep="upload",hexExpanded={};
-let liveData={};
-DEVICES.forEach(d=>{liveData[d.sn]={battery:Array.from({length:20},()=>d.battery+Math.random()*3-1.5),temp:Array.from({length:20},()=>(d.temp||24)+Math.random()*2-1)};});
-
-// ─── HELPERS ──────────────────────────────────────────
-function flash(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),3000);}
-function mockApi(ep,opt){flash("✅ DEMO: POST "+ep+" — optType: \""+opt+"\" — สำเร็จ");}
-function openModal(id){document.getElementById(id).classList.add("open");}
-function closeModal(id){document.getElementById(id).classList.remove("open");}
-function idFile(n){const l=n.toLowerCase();if(l==="user.json")return FILE_TYPES.user;if(l.includes("event"))return FILE_TYPES.event;if(l.includes("cpr"))return FILE_TYPES.cpr;if(l.includes("ecg"))return FILE_TYPES.ecg;if(l.includes("syslog"))return FILE_TYPES.syslog;return null;}
-function fmtB(b){if(b<1024)return b+" B";if(b<1048576)return(b/1024).toFixed(1)+" KB";return(b/1048576).toFixed(2)+" MB";}
-function toHex(buf,max){max=max||256;const by=new Uint8Array(buf).slice(0,max);let lines=[];for(let i=0;i<by.length;i+=16){const off=i.toString(16).padStart(8,"0");let hex=[],ascii="";for(let j=0;j<16;j++){if(i+j<by.length){hex.push(by[i+j].toString(16).padStart(2,"0"));ascii+=by[i+j]>=32&&by[i+j]<=126?String.fromCharCode(by[i+j]):".";}else{hex.push("  ");ascii+=" ";}}lines.push(off+"  "+hex.slice(0,8).join(" ")+"  "+hex.slice(8).join(" ")+"  |"+ascii+"|");}return lines.join("\n");}
-function batteryHTML(level){const c=level>60?"#00E676":level>25?"#FFD600":"#FF5252";return '<div class="battery"><div class="battery-shell" style="border:1.5px solid '+c+'"><div class="battery-fill" style="width:'+level+'%;background:'+c+'"></div><div class="battery-tip" style="background:'+c+'"></div></div><span class="battery-text" style="color:'+c+'">'+level+'%</span></div>';}
-function badgeHTML(status){const s=ST[status]||ST.info;return '<span class="badge badge-'+status+'">'+s.label+'</span>';}
-function sparkSVG(data,color,w,h){if(!data||!data.length)return"";w=w||120;h=h||32;const max=Math.max(...data),min=Math.min(...data),range=max-min||1;const pts=data.map((v,i)=>(i/(data.length-1))*w+","+(h-((v-min)/range)*(h-4)-2)).join(" ");const lx=(data.length-1)/(data.length-1)*w,ly=h-((data[data.length-1]-min)/range)*(h-4)-2;return '<svg width="'+w+'" height="'+h+'" style="display:block"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="'+lx+'" cy="'+ly+'" r="2.5" fill="'+color+'"/></svg>';}
-
-const onlineN=DEVICES.filter(d=>d.status==="online").length;
-const warnN=DEVICES.filter(d=>d.status==="warning").length;
-const offN=DEVICES.filter(d=>d.status==="offline").length;
-
-// ─── TAB SWITCHING ────────────────────────────────────
-function switchTab(tab){
-  currentTab=tab;
-  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("nav-"+tab).classList.add("active");
-  render();
+// ==================== UTILITY FUNCTIONS ====================
+function toast(msg, type) {
+  type = type || 'info';
+  var el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.innerHTML = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(function(){ el.remove(); }, 3500);
 }
 
-// ─── RENDER ───────────────────────────────────────────
-function render(){
-  const m=document.getElementById("mainContent");
-  switch(currentTab){
-    case"overview":m.innerHTML=renderOverview();break;
-    case"map":m.innerHTML=renderMap();setTimeout(initMap,100);break;
-    case"monitor":m.innerHTML=renderMonitor();break;
-    case"decoder":m.innerHTML=renderDecoder();break;
-    case"devices":m.innerHTML=renderDevices();break;
-    case"customers":m.innerHTML=renderCustomers();break;
-    case"api":m.innerHTML=renderAPI();break;
-  }
+function showModal(id) {
+  document.getElementById(id).classList.add('show');
+}
+function hideModal(id) {
+  document.getElementById(id).classList.remove('show');
 }
 
-// ─── OVERVIEW ─────────────────────────────────────────
-function renderOverview(){
-  let h='<div class="stats-grid">';
-  [{l:"เครื่อง AED",v:DEVICES.length,c:"var(--accent)",i:"⚡"},{l:"ออนไลน์",v:onlineN,c:"var(--green)",i:"●"},{l:"แจ้งเตือน",v:warnN,c:"var(--yellow)",i:"▲"},{l:"ลูกค้า",v:CUSTOMERS.length,c:"var(--purple)",i:"◎"}].forEach(k=>{
-    h+='<div class="card stat-card"><div class="bg-icon" style="color:'+k.c+'">'+k.i+'</div><div class="stat-label">'+k.l+'</div><div class="stat-value" style="color:'+k.c+'">'+k.v+'</div></div>';
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+function toggleMobileSidebar() {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+}
+
+function batColor(pct) {
+  if (pct > 60) return 'var(--online)';
+  if (pct > 20) return 'var(--warning)';
+  return 'var(--offline)';
+}
+
+function batBar(pct) {
+  return '<div class="bat-bar"><div class="bat-fill" style="width:'+pct+'%;background:'+batColor(pct)+'"></div></div> <span style="font-size:10px;color:'+batColor(pct)+'">'+pct+'%</span>';
+}
+
+function statusBadge(s) {
+  return '<span class="badge badge-'+s+'">'+s.toUpperCase()+'</span>';
+}
+
+// ==================== TAB SWITCHING ====================
+var mapInited = false;
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector('.nav-item[data-tab="'+tab+'"]').classList.add('active');
+  if (tab === 'map' && !mapInited) { initMap(); mapInited = true; }
+}
+
+// ==================== CLOCK ====================
+function updateClock() {
+  var d = new Date();
+  document.getElementById('clockEl').textContent = d.toLocaleString('th-TH', {hour:'2-digit',minute:'2-digit',second:'2-digit'}) + ' ' + d.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ==================== OVERVIEW ====================
+function renderOverview() {
+  // Device list
+  var h = '';
+  DEVICES.forEach(function(d){
+    h += '<div class="dev-row"><span class="status-dot '+d.status+'"></span><div class="dev-info"><div class="dev-name">'+d.serial+'</div><div class="dev-loc">'+d.customer+' — '+d.location+'</div></div>'+batBar(d.battery)+' '+statusBadge(d.status)+'</div>';
   });
-  h+='</div><div class="grid-2" style="margin-bottom:12px">';
-  // Device status
-  h+='<div class="card"><div class="section-title"><h3><span style="color:var(--accent)">◈</span> สถานะเครื่อง</h3></div>';
-  DEVICES.slice(0,6).forEach(d=>{
-    const s=ST[d.status];
-    h+='<div class="device-row" onclick="selectedDevice=\''+d.sn+'\';switchTab(\'map\')"><div class="dot" style="background:'+s.color+';box-shadow:0 0 6px '+s.color+'55"></div><div style="flex:1"><div style="font-size:11px;font-weight:600;color:#E0E6ED;font-family:var(--mono)">'+d.sn+'</div><div style="font-size:9.5px;color:var(--text3)">'+d.location+'</div></div>'+batteryHTML(d.battery)+'</div>';
-  });
-  h+='</div>';
+  document.getElementById('overviewDevices').innerHTML = h;
+
   // Alerts
-  h+='<div class="card"><div class="section-title"><h3><span style="color:var(--yellow)">▲</span> การแจ้งเตือน</h3></div>';
-  ALERTS.filter(a=>a.severity!=="ok").slice(0,5).forEach(a=>{
-    const s=ST[a.severity];
-    h+='<div class="alert-row"><span style="color:var(--text3);font-family:var(--mono);font-size:10px;width:38px">'+a.time+'</span><div class="dot" style="background:'+s.color+';margin-top:4px;flex-shrink:0"></div><div style="flex:1"><span style="font-weight:600;color:#B0BEC5;font-family:var(--mono)">'+a.sn+'</span><div style="font-size:10.5px;color:#6B7B8D;margin-top:1px">'+a.msg+'</div></div></div>';
+  h = '';
+  ALERTS.forEach(function(a){
+    var cls = a.severity === 'critical' ? 'critical' : a.severity === 'warning' ? 'warn' : a.severity === 'ok' ? 'ok' : 'info';
+    h += '<div class="alert-row '+cls+'"><span>'+a.icon+'</span><span><strong style="font-family:JetBrains Mono,monospace">'+a.device+'</strong> '+a.msg+'</span><span class="alert-time">'+a.time+'</span></div>';
   });
-  h+='</div></div>';
-  // API calls
-  h+='<div class="card"><div class="section-title"><h3><span style="color:var(--purple)">⟐</span> API Calls ล่าสุด</h3><button class="btn btn-outline btn-sm" onclick="switchTab(\'api\')">ดูทั้งหมด</button></div>';
-  API_LOGS.slice(0,3).forEach((l,i)=>{
-    h+='<div class="api-log" style="border-bottom:'+(i<2?"1px solid rgba(255,255,255,0.03)":"none")+'"><span style="font-family:var(--mono);color:var(--text3);font-size:10px;width:60px">'+l.time+'</span><span class="api-method">'+l.method+'</span><span style="font-family:var(--mono);color:#7B8A9A;flex:1;font-size:10px">'+l.endpoint+'</span><span style="font-family:var(--mono);color:'+(l.status===200?"var(--green)":"var(--red)")+';font-weight:600;font-size:10px">'+l.status+'</span><span style="font-family:var(--mono);color:#3A4A5A;font-size:9px">'+l.duration+'</span></div>';
+  document.getElementById('overviewAlerts').innerHTML = h;
+
+  // Recent API calls
+  var calls = [
+    {method:'GET',path:'/api/devices',status:200,time:'14:32:01'},
+    {method:'POST',path:'/api/devices/ping',status:200,time:'14:30:00'},
+    {method:'GET',path:'/api/alerts',status:200,time:'14:28:55'},
+    {method:'POST',path:'/api/decode',status:200,time:'13:45:12'},
+    {method:'GET',path:'/api/customers',status:200,time:'12:00:00'}
+  ];
+  h = '';
+  calls.forEach(function(c){
+    h += '<div class="api-log-row"><span class="api-method '+c.method.toLowerCase()+'">'+c.method+'</span><span style="flex:1;font-family:JetBrains Mono,monospace;font-size:11px">'+c.path+'</span><span class="badge badge-online">'+c.status+'</span><span class="alert-time">'+c.time+'</span></div>';
   });
-  h+='</div>';
-  return h;
+  document.getElementById('overviewApiCalls').innerHTML = h;
 }
 
-// ─── MAP ──────────────────────────────────────────────
-function renderMap(){
-  let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 style="margin:0;font-size:18px;font-weight:700;color:#E0E6ED">แผนที่ตำแหน่ง AED</h2><div style="font-size:11px;color:var(--text2)">🟢 Online '+onlineN+' · 🟡 Warning '+warnN+' · 🔴 Offline '+offN+'</div></div>';
-  h+='<div class="map-layout"><div class="card map-container"><div id="mapEl" style="width:100%;height:100%;border-radius:12px;min-height:320px"></div></div><div class="map-list">';
-  DEVICES.forEach(d=>{
-    const s=ST[d.status],sel=selectedDevice===d.sn;
-    h+='<div class="map-item'+(sel?" selected":"")+'" onclick="selectDevice(\''+d.sn+'\')">';
-    h+='<div style="display:flex;align-items:center;gap:8px"><div class="dot-lg" style="background:'+s.color+';box-shadow:0 0 8px '+s.color+'55"></div><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#E0E6ED;font-family:var(--mono)">'+d.sn+'</div><div style="font-size:9.5px;color:var(--text2)">'+d.location+'</div></div></div>';
-    if(sel){
-      h+='<div class="map-item-detail"><div>'+d.model+' · '+d.customer+'</div><div>🔋 '+batteryHTML(d.battery)+'</div><div>📍 '+d.lat.toFixed(4)+', '+d.lng.toFixed(4)+'</div><div>ติดตั้ง '+d.installDate+' · ตรวจ '+d.lastCheck+'</div>';
-      if(d.lastEvent)h+='<div style="color:var(--yellow)">⚡ Event ล่าสุด: '+d.lastEvent+'</div>';
-      h+='</div>';
-    }
-    h+='</div>';
+// ==================== MAP ====================
+var map, markers = [];
+function initMap() {
+  map = L.map('mapEl').setView([13.75, 100.55], 6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+
+  DEVICES.forEach(function(d, i) {
+    var color = d.status === 'online' ? '#00E676' : d.status === 'warning' ? '#FFD600' : '#FF5252';
+    var icon = L.divIcon({
+      className: '',
+      html: '<div style="width:14px;height:14px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 0 8px '+color+'"></div>',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+    var m = L.marker([d.lat, d.lng], {icon: icon}).addTo(map);
+    m.bindPopup('<strong>'+d.serial+'</strong><br>'+d.model+'<br>'+d.customer+' — '+d.location+'<br>Battery: '+d.battery+'%<br>Status: '+d.status);
+    markers.push(m);
   });
-  h+='</div></div>';
-  return h;
-}
 
-function initMap(){
-  const el=document.getElementById("mapEl");
-  if(!el)return;
-  if(mapInstance){mapInstance.remove();mapInstance=null;markers=[];}
-  mapInstance=L.map(el,{zoomControl:false}).setView([13.75,100.52],6);
-  L.control.zoom({position:"bottomright"}).addTo(mapInstance);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19}).addTo(mapInstance);
-  DEVICES.forEach(d=>{
-    const s=ST[d.status];
-    const icon=L.divIcon({className:"",html:'<div style="width:14px;height:14px;border-radius:50%;background:'+s.color+';border:2px solid #0A1018;box-shadow:0 0 10px '+s.color+'88;cursor:pointer"></div>',iconSize:[14,14],iconAnchor:[7,7]});
-    const marker=L.marker([d.lat,d.lng],{icon}).addTo(mapInstance);
-    marker.bindPopup('<div style="font-family:sans-serif;font-size:12px;min-width:160px"><b>'+d.sn+'</b><br/>'+d.model+'<br/>'+d.location+'<br/>🔋 '+d.battery+'% · <span style="color:'+s.color+'">'+s.label+'</span></div>');
-    marker.on("click",()=>selectDevice(d.sn));
-    markers.push(marker);
+  // Device sidebar
+  var h = '';
+  DEVICES.forEach(function(d, i) {
+    h += '<div class="map-dev-card" id="mapDev'+i+'" onclick="mapSelectDevice('+i+')">';
+    h += '<div style="display:flex;align-items:center;gap:8px"><span class="status-dot '+d.status+'"></span><div style="flex:1"><div class="dev-name">'+d.serial+'</div><div class="dev-loc">'+d.customer+'</div></div>'+statusBadge(d.status)+'</div>';
+    h += '<div class="map-dev-detail"><strong>Model:</strong> '+d.model+'<br><strong>Location:</strong> '+d.location+'<br><strong>Battery:</strong> '+d.battery+'%<br><strong>Lat:</strong> '+d.lat+' <strong>Lng:</strong> '+d.lng+'</div>';
+    h += '</div>';
   });
-  if(DEVICES.length>0){
-    const bounds=L.latLngBounds(DEVICES.map(d=>[d.lat,d.lng]));
-    mapInstance.fitBounds(bounds,{padding:[40,40],maxZoom:12});
-  }
-  if(selectedDevice){
-    const d=DEVICES.find(x=>x.sn===selectedDevice);
-    if(d)setTimeout(()=>mapInstance.flyTo([d.lat,d.lng],15,{duration:1}),500);
-  }
+  document.getElementById('mapDevList').innerHTML = h;
+
+  setTimeout(function(){ map.invalidateSize(); }, 200);
 }
 
-function selectDevice(sn){
-  selectedDevice=selectedDevice===sn?null:sn;
-  if(currentTab==="map"){render();setTimeout(()=>{if(mapInstance&&selectedDevice){const d=DEVICES.find(x=>x.sn===selectedDevice);if(d)mapInstance.flyTo([d.lat,d.lng],15,{duration:1});}},200);}
-  else if(currentTab==="devices")render();
+function mapSelectDevice(i) {
+  var d = DEVICES[i];
+  document.querySelectorAll('.map-dev-card').forEach(function(el){ el.classList.remove('selected','expanded'); });
+  var el = document.getElementById('mapDev'+i);
+  el.classList.add('selected','expanded');
+  map.flyTo([d.lat, d.lng], 16, {duration: 1.5});
+  markers[i].openPopup();
 }
 
-// ─── MONITORING ───────────────────────────────────────
-function renderMonitor(){
-  let h='<h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:#E0E6ED">Real-time Monitoring</h2><p style="color:var(--text2);font-size:12px;margin-bottom:16px">ข้อมูลจำลอง — อัปเดตทุก 3 วินาที</p>';
+// ==================== MONITORING ====================
+var monSparkData = {};
+function renderMonitoring() {
   // Alerts
-  h+='<div class="card" style="margin-bottom:12px"><div class="section-title"><h3><span style="color:var(--yellow)">▲</span> การแจ้งเตือนที่ต้องดำเนินการ</h3></div>';
-  ALERTS.filter(a=>a.severity==="critical"||a.severity==="warning").forEach(a=>{
-    const s=ST[a.severity],bg=a.severity==="critical"?"rgba(255,82,82,0.08)":"rgba(255,214,0,0.08)";
-    h+='<div class="alert-card" style="background:'+bg+';border:1px solid '+s.color+'22"><div class="dot-lg" style="background:'+s.color+';'+(a.severity==="critical"?"animation:blink 1s infinite":"")+'"></div><span style="font-weight:700;font-family:var(--mono);font-size:11px;color:#E0E6ED;width:120px">'+a.sn+'</span><span style="flex:1;font-size:11px;color:#B0BEC5">'+a.msg+'</span>'+badgeHTML(a.severity)+'<span style="font-size:10px;color:var(--text3)">'+a.time+'</span></div>';
+  var h = '';
+  ALERTS.forEach(function(a) {
+    var cls = a.severity === 'critical' ? 'critical' : a.severity === 'warning' ? 'warn' : a.severity === 'ok' ? 'ok' : 'info';
+    h += '<div class="alert-row '+cls+'"><span>'+a.icon+'</span><span><strong style="font-family:JetBrains Mono,monospace">'+a.device+'</strong> '+a.msg+'</span><span class="alert-time">'+a.time+'</span></div>';
   });
-  h+='</div>';
+  document.getElementById('monAlerts').innerHTML = h;
+
   // Device grid
-  h+='<div class="monitor-grid">';
-  DEVICES.forEach(d=>{
-    const s=ST[d.status],ld=liveData[d.sn];
-    h+='<div class="card monitor-device"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div class="dot-lg" style="background:'+s.color+';box-shadow:0 0 8px '+s.color+'55"></div><span style="font-weight:700;font-family:var(--mono);font-size:12px;color:#E0E6ED">'+d.sn+'</span>'+badgeHTML(d.status)+'<div style="flex:1"></div>'+batteryHTML(d.battery)+'</div>';
-    h+='<div style="font-size:10px;color:var(--text2);margin-bottom:8px">'+d.model+' · '+d.location+'</div>';
-    if(d.status!=="offline"){
-      h+='<div class="sparkline-row"><div><div class="sparkline-label">Battery</div>'+sparkSVG(ld?ld.battery:[],"#00E676")+'</div><div><div class="sparkline-label">Temp</div>'+sparkSVG(ld?ld.temp:[],"#00B0FF")+'</div><div style="display:grid;gap:2px;font-size:10px"><div>🌡️ <span style="color:#B0BEC5;font-family:var(--mono)">'+(d.temp||"-")+'°C</span></div><div>💧 <span style="color:#B0BEC5;font-family:var(--mono)">'+(d.humidity||"-")+'%</span></div><div>📋 Pad: <span style="color:#B0BEC5;font-family:var(--mono)">'+d.padExpiry+'</span></div></div></div>';
-    }else{
-      h+='<div style="text-align:center;padding:12px 0;color:#3A4A5A;font-size:11px">⚠️ เครื่องออฟไลน์ — ไม่มีข้อมูล real-time</div>';
+  h = '';
+  DEVICES.forEach(function(d) {
+    monSparkData[d.serial] = { bat: [], temp: [] };
+    for (var j = 0; j < 20; j++) {
+      monSparkData[d.serial].bat.push(Math.max(0, d.battery - Math.floor(Math.random()*5) + 2));
+      monSparkData[d.serial].temp.push(20 + Math.floor(Math.random()*8));
     }
-    h+='</div>';
+    h += '<div class="mon-card" id="mon_'+d.serial+'">';
+    h += '<div class="mon-card-hdr"><span class="status-dot '+d.status+'"></span><div style="flex:1"><div class="dev-name">'+d.serial+'</div><div class="dev-loc">'+d.customer+' — '+d.location+'</div></div>'+statusBadge(d.status)+'</div>';
+    h += '<div>'+batBar(d.battery)+'</div>';
+    h += '<div class="sparkline-row"><div class="sparkline-group"><div class="sparkline-label">Battery %</div><div class="sparkline" id="spark_bat_'+d.serial+'"></div></div>';
+    h += '<div class="sparkline-group"><div class="sparkline-label">Temp &deg;C</div><div class="sparkline" id="spark_temp_'+d.serial+'"></div></div></div>';
+    h += '</div>';
   });
-  h+='</div>';
-  return h;
+  document.getElementById('monGrid').innerHTML = h;
+  updateSparklines();
 }
 
-// ─── DECODER ──────────────────────────────────────────
-function renderDecoder(){
-  let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><h2 style="margin:0;font-size:18px;font-weight:700;color:#E0E6ED">AED Binary Decoder</h2><div style="font-size:11px;color:var(--text2);margin-top:2px">อัปโหลดไฟล์ .bin / .json จาก USB → ถอดรหัสด้วย AI → รายงาน CPR ภาษาไทย</div></div>';
-  if(decStep!=="upload")h+='<button class="btn btn-outline" style="color:#8899AA;border-color:rgba(136,153,170,0.2)" onclick="resetDecoder()">เริ่มใหม่</button>';
-  h+='</div>';
-  // Steps indicator
-  h+='<div class="dec-steps">';
-  [{k:"upload",l:"อัปโหลด",i:"📁"},{k:"decoding",l:"ถอดรหัส",i:"🔓"},{k:"report",l:"รายงาน",i:"📄"}].forEach((s,i)=>{
-    const steps=["upload","decoding","report"],active=s.k===decStep,done=steps.indexOf(s.k)<steps.indexOf(decStep);
-    h+='<div class="dec-step" style="opacity:'+(active?1:done?0.7:0.3)+'"><div class="dec-step-dot'+(active?" active":"")+(done?" done":"")+'">'+(done?"✓":s.i)+'</div><span style="font-size:11px;font-weight:'+(active?600:400)+'">'+s.l+'</span>';
-    if(i<2)h+='<div style="width:30px;height:1px;background:'+(done?"#27AE60":"rgba(255,255,255,0.1)")+';margin-left:6px"></div>';
-    h+='</div>';
-  });
-  h+='</div>';
+function updateSparklines() {
+  DEVICES.forEach(function(d) {
+    var bd = monSparkData[d.serial];
+    if (!bd) return;
+    // Push new data
+    bd.bat.push(Math.max(0, d.battery - Math.floor(Math.random()*5) + 2));
+    bd.temp.push(20 + Math.floor(Math.random()*8));
+    if (bd.bat.length > 20) bd.bat.shift();
+    if (bd.temp.length > 20) bd.temp.shift();
 
-  if(decStep==="upload"){
-    h+='<div class="dropzone" onclick="document.getElementById(\'decInput\').click()" ondrop="handleDecDrop(event)" ondragover="event.preventDefault()"><div style="font-size:36px;margin-bottom:6px">📂</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">ลากไฟล์มาวาง หรือคลิกเลือก</div><div style="font-size:11px;color:var(--text2)">event.bin · cpr_XXXX.bin · ecg_XXXX.bin · syslog.bin · user.json</div><input id="decInput" type="file" multiple accept=".bin,.json" style="display:none" onchange="handleDecFiles(this.files)"></div>';
-    if(decFiles.length>0){
-      h+='<div style="font-size:12px;font-weight:600;color:#8899AA;margin-bottom:8px">ไฟล์ ('+decFiles.length+')</div>';
-      decFiles.forEach(f=>{
-        const info=idFile(f.name),exp=hexExpanded[f.name];
-        h+='<div class="file-item"><div class="file-header"><div class="file-icon" style="background:'+(info?info.color:"#555")+'20">'+(info?info.icon:"📎")+'</div><div style="flex:1"><div style="font-weight:600;font-size:12px">'+f.name+'</div><div style="font-size:10px;color:var(--text2)">'+(info?info.label:"Unknown")+' — '+fmtB(f.size)+'</div></div><button class="btn btn-sm" style="background:rgba(255,255,255,0.06);color:#8899AA;border:none" onclick="toggleHex(\''+f.name+'\')">'+(exp?"ซ่อน":"HEX")+'</button><button class="btn btn-sm" style="background:rgba(255,82,82,0.12);color:var(--red);border:none;font-weight:700" onclick="removeDecFile(\''+f.name+'\')">×</button></div>';
-        if(exp&&decHex[f.name])h+='<div class="hex-dump">'+decHex[f.name]+'</div>';
-        h+='</div>';
-      });
-      h+='<button class="btn btn-red btn-full" style="padding:12px;margin-top:10px;font-size:14px;border-radius:10px" onclick="startDecode()">⚡ ถอดรหัสและสร้างรายงาน</button>';
+    var maxBat = 100, maxTemp = 35;
+    var batEl = document.getElementById('spark_bat_' + d.serial);
+    var tempEl = document.getElementById('spark_temp_' + d.serial);
+    if (batEl) {
+      batEl.innerHTML = bd.bat.map(function(v){ return '<div class="sparkline-bar" style="height:'+(v/maxBat*100)+'%;background:'+batColor(v)+'"></div>'; }).join('');
     }
-  }else if(decStep==="decoding"){
-    h+='<div style="text-align:center;padding:50px 20px"><div class="spinner"><div class="spinner-outer"></div><div class="spinner-inner"></div><div class="spinner-icon">🔓</div></div><div style="font-size:15px;font-weight:600;margin-bottom:6px">กำลังถอดรหัส...</div><div style="font-size:12px;color:var(--text2)" id="decProgress"></div><div class="dots"><span></span><span></span><span></span><span></span><span></span></div></div>';
-  }else if(decStep==="report"&&decReport){
-    h+='<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"><button class="btn btn-red" onclick="printReport()">🖨️ พิมพ์ / PDF</button><button class="btn btn-outline" onclick="downloadHTML()">📄 HTML</button><button class="btn btn-outline" style="color:var(--green);border-color:rgba(0,230,118,0.2)" onclick="downloadJSON()">📋 JSON</button></div>';
-    h+='<div class="card" style="background:#fff;padding:0;overflow:hidden"><div id="reportContent">'+genReportHTML(decReport)+'</div></div>';
+    if (tempEl) {
+      tempEl.innerHTML = bd.temp.map(function(v){ return '<div class="sparkline-bar" style="height:'+(v/maxTemp*100)+'%;background:var(--accent)"></div>'; }).join('');
+    }
+  });
+}
+setInterval(updateSparklines, 3000);
+
+// ==================== DECODER ====================
+var decFiles = [], decHexData = {}, decRptData = null, decStep = 'upload';
+
+function decRenderSteps() {
+  var steps = ['Upload','Decoding','Report'];
+  var idx = decStep === 'upload' ? 0 : decStep === 'decoding' ? 1 : 2;
+  var h = '';
+  steps.forEach(function(s, i) {
+    h += '<div class="dec-step"><div class="dec-step-dot '+(i<idx?'done':i===idx?'active':'')+'">'+( i<idx?'&#10003;':(i+1))+'</div><span class="dec-step-label '+(i===idx?'active':'')+'">'+s+'</span>';
+    if (i < 2) h += '<div class="dec-step-line '+(i<idx?'done':'')+'"></div>';
+    h += '</div>';
+  });
+  document.getElementById('decSteps').innerHTML = h;
+}
+decRenderSteps();
+
+function decIdentifyFile(name) {
+  var l = name.toLowerCase();
+  if (l.endsWith('.json')) return {icon:'&#128100;',label:'User/Patient',color:'#D97706'};
+  if (l.includes('event')) return {icon:'&#9889;',label:'Event Log',color:'#FF5252'};
+  if (l.includes('cpr')) return {icon:'&#128147;',label:'CPR Data',color:'#00B0FF'};
+  if (l.includes('ecg')) return {icon:'&#128200;',label:'ECG',color:'#7C3AED'};
+  if (l.includes('syslog')) return {icon:'&#128295;',label:'System Log',color:'#00E676'};
+  if (l.endsWith('.bin') || l.endsWith('.dat') || l.endsWith('.idx')) return {icon:'&#128206;',label:'AED Data',color:'#6B7280'};
+  return null;
+}
+
+function decHexDump(buf, max) {
+  max = max || 256;
+  var by = new Uint8Array(buf).slice(0, max);
+  var lines = [];
+  for (var i = 0; i < by.length; i += 16) {
+    var off = i.toString(16).padStart(8, '0');
+    var hex = [], ascii = '';
+    for (var j = 0; j < 16; j++) {
+      if (i + j < by.length) {
+        hex.push(by[i+j].toString(16).padStart(2, '0'));
+        ascii += (by[i+j] >= 32 && by[i+j] <= 126) ? String.fromCharCode(by[i+j]) : '.';
+      } else { hex.push('  '); ascii += ' '; }
+    }
+    lines.push(off + '  ' + hex.slice(0,8).join(' ') + '  ' + hex.slice(8).join(' ') + '  |' + ascii + '|');
   }
-  return h;
+  return lines.join('\n');
 }
 
-function handleDecDrop(e){e.preventDefault();handleDecFiles(e.dataTransfer.files);}
-async function handleDecFiles(fileList){
-  const arr=Array.from(fileList).filter(f=>idFile(f.name));
-  if(!arr.length){flash("⚠️ ไม่พบไฟล์ที่รองรับ");return;}
-  const names=decFiles.map(x=>x.name);
-  decFiles=decFiles.concat(arr.filter(f=>!names.includes(f.name)));
-  for(const f of arr){if(!names.includes(f.name)){const buf=await f.arrayBuffer();decHex[f.name]=toHex(buf);}}
-  render();
+function fmtBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
 }
-function removeDecFile(name){decFiles=decFiles.filter(f=>f.name!==name);delete decHex[name];delete hexExpanded[name];render();}
-function toggleHex(name){hexExpanded[name]=!hexExpanded[name];render();}
-function resetDecoder(){decFiles=[];decHex={};decReport=null;decStep="upload";hexExpanded={};render();}
 
-async function startDecode(){
-  decStep="decoding";render();
-  const sp=t=>{const el=document.getElementById("decProgress");if(el)el.textContent=t;};
-  try{
-    sp("กำลังเตรียมข้อมูลไฟล์...");
-    const descs=[],parts=[];
-    for(const f of decFiles){
-      const info=idFile(f.name);
-      descs.push("- "+f.name+" ("+fmtB(f.size)+") → "+(info?info.label:"Unknown"));
-      if(f.name.toLowerCase().endsWith(".json")){
-        const t=await f.text();
-        parts.push({type:"text",text:"=== FILE: "+f.name+" (JSON) ===\n"+t+"\n=== END FILE ==="});
-      }else{
-        const buf=await f.arrayBuffer();
-        parts.push({type:"text",text:"=== "+f.name+" ("+fmtB(f.size)+") ===\nHEX:\n"+toHex(buf,4096)+"\n=== END ==="});
+function decHandleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  decHandleFiles(e.dataTransfer.files);
+}
+
+async function decHandleFiles(fileList) {
+  var arr = Array.from(fileList);
+  var valid = arr.filter(function(f){ return decIdentifyFile(f.name); });
+  if (!valid.length) { toast('No supported AED files found','error'); return; }
+  var existing = decFiles.map(function(f){ return f.name; });
+  for (var i = 0; i < valid.length; i++) {
+    var f = valid[i];
+    if (!existing.includes(f.name)) {
+      decFiles.push(f);
+      var buf = await f.arrayBuffer();
+      decHexData[f.name] = decHexDump(buf);
+    }
+  }
+  decRenderFileList();
+}
+
+function decRemoveFile(name) {
+  decFiles = decFiles.filter(function(f){ return f.name !== name; });
+  delete decHexData[name];
+  decRenderFileList();
+}
+
+function decRenderFileList() {
+  if (!decFiles.length) {
+    document.getElementById('decFileList').style.display = 'none';
+    document.getElementById('decStartBtn').disabled = true;
+    return;
+  }
+  document.getElementById('decFileList').style.display = 'block';
+  document.getElementById('decStartBtn').disabled = false;
+  var h = '';
+  decFiles.forEach(function(f) {
+    var info = decIdentifyFile(f.name);
+    var hexId = 'dechex_' + f.name.replace(/\W/g, '_');
+    h += '<div class="dec-file-row"><span style="font-size:16px">'+info.icon+'</span><span class="fname">'+f.name+'</span><span class="fsize">'+fmtBytes(f.size)+'</span><span class="badge" style="background:rgba(0,176,255,.12);color:'+info.color+'">'+info.label+'</span>';
+    h += '<button class="btn btn-outline" style="padding:2px 8px;font-size:10px" onclick="document.getElementById(\''+hexId+'\').style.display=document.getElementById(\''+hexId+'\').style.display===\'none\'?\'block\':\'none\'">HEX</button>';
+    h += '<button class="fremove" onclick="decRemoveFile(\''+f.name+'\')">&times;</button></div>';
+    h += '<div class="hex-viewer" id="'+hexId+'" style="display:none;margin-bottom:8px">'+(decHexData[f.name]||'')+'</div>';
+  });
+  document.getElementById('decFileList').innerHTML = h;
+  document.getElementById('decUploadActions').style.display = 'block';
+}
+
+async function decStartDecode() {
+  decStep = 'decoding';
+  decRenderSteps();
+  document.getElementById('decUpload').style.display = 'none';
+  document.getElementById('decDecoding').style.display = 'block';
+  document.getElementById('decReport').style.display = 'none';
+
+  var sp = function(t){ document.getElementById('decProgress').textContent = t; };
+
+  try {
+    sp('Preparing data...');
+    var ds = [], ps = [];
+    for (var i = 0; i < decFiles.length; i++) {
+      var f = decFiles[i];
+      var info = decIdentifyFile(f.name);
+      ds.push('- ' + f.name + ' (' + fmtBytes(f.size) + ') -> ' + (info ? info.label : '?'));
+      if (f.name.toLowerCase().endsWith('.json')) {
+        ps.push({type:'text', text:'=== ' + f.name + ' (JSON) ===\n' + (await f.text()) + '\n=== END ==='});
+      } else {
+        var buf = await f.arrayBuffer();
+        ps.push({type:'text', text:'=== ' + f.name + ' (' + fmtBytes(f.size) + ') ===\nHEX:\n' + decHexDump(buf, 4096) + '\n=== END ==='});
       }
     }
-    sp("กำลังส่งข้อมูลไปยัง AI เพื่อถอดรหัส...");
-    const sysPrompt='You are an expert AED binary log decoder for Primedic/Yuwell devices. Decode the uploaded binary files and produce a COMPREHENSIVE Thai-language CPR report in structured JSON. For binary files, analyze hex data: event.bin (timestamps+event codes), cpr (depth/rate/release), ecg (16-bit signed LE waveform), syslog.bin (system log), user.json (device/patient info). Even if you cannot fully decode, provide BEST interpretation. Respond with ONLY JSON (no markdown): {"device":{"model":"","serial":"","firmware":"","manufacture_date":"","last_service":""},"patient":{"id":"","age":0,"gender":"","location":""},"operator":{"name":"","role":"","cert":""},"incident":{"date":"","time":"","response_time_sec":0,"ems_arrival_min":0},"events":[{"time":"","elapsed":"","code":"","description":"Thai"}],"cpr_rounds":[{"round":1,"start_sec":0,"duration_sec":120,"compressions":240,"avg_depth_mm":52.3,"avg_rate_bpm":110,"avg_release_pct":92,"depth_compliance":85,"rate_compliance":78,"release_compliance":90}],"shocks":[{"time":"","elapsed":"","energy_j":200,"current_a":8.5,"impedance_ohm":65,"result":"สำเร็จ"}],"ecg_analysis":{"initial_rhythm":"","final_rhythm":"","duration_sec":60,"interpretation":"Thai"},"device_checks":[{"item":"Thai","result":"ผ่าน/ไม่ผ่าน","detail":""}],"metrics":{"total_rounds":0,"total_compressions":0,"total_cpr_duration_sec":0,"overall_avg_depth":0,"overall_avg_rate":0,"overall_avg_release":0,"overall_depth_compliance":0,"overall_rate_compliance":0,"overall_release_compliance":0},"recommendations":["Thai"]} ALL descriptions/recommendations in Thai. Use AHA 2020: depth 50-60mm, rate 100-120/min, recoil >=80%.';
-    const userContent=[{type:"text",text:"ถอดรหัส AED binary:\n"+descs.join("\n")+"\nวิเคราะห์ไฟล์ ส่ง JSON:"},...parts];
-    const resp=await fetch("/api/decode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:8000,system:sysPrompt,messages:[{role:"user",content:userContent}]})});
-    if(!resp.ok)throw new Error("API Error "+resp.status);
-    sp("กำลังวิเคราะห์ผลลัพธ์...");
-    const data=await resp.json();
-    const text=data.content.map(c=>c.type==="text"?c.text:"").join("");
-    decReport=JSON.parse(text.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim());
-    decStep="report";render();
-  }catch(err){flash("⚠️ "+err.message);decStep="upload";render();}
+
+    sp('Sending to AI...');
+    var sysPrompt = 'You are an expert AED (Automated External Defibrillator) binary log decoder and CPR quality analyst specializing in Primedic/Yuwell devices.\n\nTASK: Decode uploaded binary files and produce a COMPREHENSIVE Thai-language CPR analysis report in JSON.\n\nBINARY FORMAT HINTS:\n- event.bin: [4B timestamp LE][1B event_code][1-3B params] in 8-16 byte records\n- cpr_XXXX.bin: [2B depth x10][2B rate x10] in 4-byte records\n- ecg_XXXX.bin: 16-bit signed LE samples at 250-500Hz\n- syslog.bin: text-based or structured log entries\n- user.json: device/patient/operator info\n\nANALYSIS REQUIREMENTS:\n1. Compare against AHA 2020 guidelines: Depth 50-60mm, Rate 100-120bpm, Recoil >80%\n2. Identify problems in Thai\n3. Give actionable recommendations ranked by priority\n4. Grade: A-F\n5. Calculate time-based metrics\n\nRespond with ONLY a JSON object (no markdown) with: device, patient, operator, incident, events, cpr_rounds, shocks, ecg_analysis, device_checks, metrics, quality_analysis, recommendations.\nALL text in Thai. Be SPECIFIC with numbers.';
+
+    var userContent = [{type:'text', text:'ถอดรหัสไฟล์ AED ต่อไปนี้:\n'+ds.join('\n')+'\n\nวิเคราะห์และส่ง JSON:'}].concat(ps);
+
+    var res = await fetch('/api/decode', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        system: sysPrompt,
+        messages: [{role:'user', content: userContent}]
+      })
+    });
+
+    if (!res.ok) throw new Error('API Error ' + res.status);
+    sp('Analyzing...');
+    var data = await res.json();
+    var txt = data.content.map(function(c){ return c.type === 'text' ? c.text : ''; }).join('');
+    var clean = txt.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    decRptData = JSON.parse(clean);
+    decStep = 'report';
+    decRenderSteps();
+    document.getElementById('decDecoding').style.display = 'none';
+    document.getElementById('decReport').style.display = 'block';
+    document.getElementById('decReportContent').innerHTML = decGenReport(decRptData);
+    toast('Decoding complete!', 'success');
+  } catch(e) {
+    toast('Decode error: ' + e.message, 'error');
+    decStep = 'upload';
+    decRenderSteps();
+    document.getElementById('decDecoding').style.display = 'none';
+    document.getElementById('decUpload').style.display = 'block';
+  }
 }
 
-// ─── REPORT HTML ──────────────────────────────────────
-function genReportHTML(r){
-  const m=r.metrics||{},dev=r.device||{},pat=r.patient||{},op=r.operator||{},inc=r.incident||{},ecg=r.ecg_analysis||{};
-  const cc=v=>v>=80?"#27AE60":v>=60?"#F39C12":"#E74C3C";
-  const rows=(arr,cols)=>{
-    if(!arr||!arr.length)return'<tr><td colspan="'+(cols.length+1)+'" style="text-align:center;color:#95A5A6;padding:12px">ไม่มีข้อมูล</td></tr>';
-    return arr.map((item,i)=>'<tr style="background:'+(i%2?"#F8F9FA":"#FFF")+'"><td style="background:#EAECEE;text-align:center;width:36px;color:#7F8C8D;font-size:8pt">'+(i+1)+'</td>'+cols.map(c=>'<td style="text-align:center;font-size:8pt">'+(typeof c==="function"?c(item):item[c]||"-")+'</td>').join("")+'</tr>').join("");
-  };
-  let h='<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>AED Report — '+(dev.serial||"N/A")+'</title><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap");*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Noto Sans Thai",sans-serif;font-size:9pt;color:#2C3E50;background:#fff}.p{max-width:210mm;margin:0 auto;padding:12mm 16mm}h1{font-size:18pt;color:#1B4F72;text-align:center}.sub{text-align:center;color:#7F8C8D;font-size:9pt;margin-bottom:12px}.st{font-size:11pt;font-weight:700;margin:14px 0 5px;display:flex;align-items:center;gap:6px}.sb{width:3px;height:16px;border-radius:2px}table{width:100%;border-collapse:collapse;font-size:8pt;margin-bottom:8px}th,td{border:1px solid #D5D8DC;padding:3px 5px}th{color:#fff;font-weight:600;text-align:center}.tb{background:#1B4F72}.tp{background:#6C3483}.tg{background:#1E8449}.td{background:#2C3E50}.kg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0 10px}.kc{background:#EBF5FB;border-radius:5px;padding:10px 6px;text-align:center;border:1px solid #D5DBDB}.kv{font-size:20pt;font-weight:700;line-height:1.1}.kl{font-size:7pt;color:#7F8C8D;margin-top:2px}.kvt td:first-child{font-weight:600;width:140px;background:#F8F9FA}.ri{padding:3px 0 3px 8px;border-left:3px solid #E74C3C;margin-bottom:4px;font-size:8.5pt}.ri.g{border-left-color:#27AE60}.ft{text-align:center;color:#BDC3C7;font-size:7.5pt;margin-top:16px}@media print{.p{padding:8mm 12mm}}</style></head><body><div class="p">';
-  h+='<h1>รายงานการใช้เครื่อง AED</h1><div class="sub">Automated External Defibrillator — Usage Report</div>';
-  h+='<div class="st"><div class="sb" style="background:#2980B9"></div>1. บทสรุปเหตุการณ์</div>';
-  h+='<table class="kvt"><tr><td>วันที่</td><td>'+(inc.date||"-")+" เวลา "+(inc.time||"-")+'</td></tr><tr style="background:#F8F9FA"><td>ผู้ป่วย</td><td>'+(pat.id||"-")+" / "+(pat.age||"-")+" ปี / "+(pat.gender||"-")+" — "+(pat.location||"-")+'</td></tr><tr><td>ผู้ปฏิบัติการ</td><td>'+(op.name||"-")+" ("+(op.role||"-")+") — "+(op.cert||"-")+'</td></tr><tr style="background:#F8F9FA"><td>เครื่อง AED</td><td>'+(dev.model||"-")+" S/N: "+(dev.serial||"-")+'</td></tr><tr><td>Response / EMS</td><td>'+(inc.response_time_sec||"-")+" วินาที / "+(inc.ems_arrival_min||"-")+" นาที</td></tr></table>";
-  h+='<div class="st"><div class="sb" style="background:#2980B9"></div>2. ตัวชี้วัดคุณภาพ CPR</div>';
-  h+='<div class="kg"><div class="kc"><div class="kv" style="color:'+cc(m.overall_depth_compliance||0)+'">'+(m.overall_avg_depth||"-")+'<span style="font-size:9pt"> mm</span></div><div class="kl">ความลึกเฉลี่ย</div></div><div class="kc"><div class="kv" style="color:'+cc(m.overall_rate_compliance||0)+'">'+(m.overall_avg_rate||"-")+'<span style="font-size:9pt"> bpm</span></div><div class="kl">อัตราเฉลี่ย</div></div><div class="kc"><div class="kv" style="color:'+cc(m.overall_release_compliance||0)+'">'+(m.overall_avg_release||"-")+'<span style="font-size:9pt">%</span></div><div class="kl">การปล่อยหน้าอก</div></div><div class="kc"><div class="kv" style="color:#2980B9">'+(m.total_rounds||"-")+'<span style="font-size:9pt"> รอบ</span></div><div class="kl">จำนวนรอบ CPR</div></div></div>';
-  h+='<div class="st"><div class="sb" style="background:#2980B9"></div>3. CPR รายรอบ</div>';
-  h+='<table><tr><th class="tb">#</th><th class="tb">รอบ</th><th class="tb">ระยะเวลา</th><th class="tb">จำนวนกด</th><th class="tb">ลึก(mm)</th><th class="tb">อัตรา</th><th class="tb">ปล่อย%</th><th class="tb">ลึก%</th><th class="tb">อัตรา%</th></tr>'+rows(r.cpr_rounds,[x=>"รอบ "+x.round,x=>x.duration_sec+"s","compressions","avg_depth_mm","avg_rate_bpm",x=>x.avg_release_pct+"%",x=>'<span style="color:'+cc(x.depth_compliance)+'">'+x.depth_compliance+'%</span>',x=>'<span style="color:'+cc(x.rate_compliance)+'">'+x.rate_compliance+'%</span>'])+'</table>';
-  h+='<div class="st"><div class="sb" style="background:#9B59B6"></div>4. ECG</div>';
-  h+='<table class="kvt"><tr><td>Initial Rhythm</td><td>'+(ecg.initial_rhythm||"-")+'</td></tr><tr style="background:#F8F9FA"><td>Final Rhythm</td><td>'+(ecg.final_rhythm||"-")+'</td></tr><tr><td>ระยะเวลา</td><td>'+(ecg.duration_sec||"-")+' วินาที</td></tr><tr style="background:#F8F9FA"><td>การแปลผล</td><td>'+(ecg.interpretation||"-")+'</td></tr></table>';
-  h+='<div class="st"><div class="sb" style="background:#6C3483"></div>5. Shock</div>';
-  h+='<table><tr><th class="tp">#</th><th class="tp">เวลา</th><th class="tp">Elapsed</th><th class="tp">พลังงาน</th><th class="tp">กระแส</th><th class="tp">Impedance</th><th class="tp">ผลลัพธ์</th></tr>'+rows(r.shocks,["time","elapsed",x=>x.energy_j+"J",x=>x.current_a+"A",x=>x.impedance_ohm+"Ω","result"])+'</table>';
-  h+='<div class="st"><div class="sb" style="background:#2C3E50"></div>6. Event Log</div>';
-  h+='<table><tr><th class="td">#</th><th class="td">เวลา</th><th class="td">Elapsed</th><th class="td">รหัส</th><th class="td">รายละเอียด</th></tr>'+rows(r.events,["time","elapsed","code","description"])+'</table>';
-  h+='<div class="st"><div class="sb" style="background:#1E8449"></div>7. ตรวจสอบเครื่อง</div>';
-  h+='<table><tr><th class="tg">#</th><th class="tg">รายการ</th><th class="tg">ผลลัพธ์</th><th class="tg">รายละเอียด</th></tr>'+rows(r.device_checks,["item",x=>'<span style="color:'+(x.result==="ผ่าน"?"#27AE60":"#E74C3C")+';font-weight:600">'+x.result+'</span>',"detail"])+'</table>';
-  h+='<div class="st"><div class="sb" style="background:#D35400"></div>8. ข้อมูลเครื่อง</div>';
-  h+='<table class="kvt"><tr><td>รุ่น</td><td>'+(dev.model||"-")+'</td></tr><tr style="background:#F8F9FA"><td>S/N</td><td>'+(dev.serial||"-")+'</td></tr><tr><td>Firmware</td><td>'+(dev.firmware||"-")+'</td></tr><tr style="background:#F8F9FA"><td>วันผลิต</td><td>'+(dev.manufacture_date||"-")+'</td></tr><tr><td>บำรุงรักษาล่าสุด</td><td>'+(dev.last_service||"-")+'</td></tr></table>';
-  h+='<div class="st"><div class="sb" style="background:#E74C3C"></div>9. ข้อเสนอแนะ</div>';
-  (r.recommendations||[]).forEach((x,i)=>{h+='<div class="ri'+(x.includes("ดี")||x.includes("✓")?" g":"")+'">'+(i+1)+". "+x+'</div>';});
-  h+='<div class="ft">— สิ้นสุดรายงาน — | Primedic myAED Platform | '+new Date().toLocaleDateString("th-TH")+'</div></div></body></html>';
+function decGenReport(r) {
+  var m = r.metrics || {}, d = r.device || {}, ic = r.incident || {}, qa = r.quality_analysis || {}, o = r.operator || {};
+  var cc = function(v){ return v >= 80 ? 'var(--online)' : v >= 60 ? 'var(--warning)' : 'var(--offline)'; };
+  var gc = function(g){ var c = {A:'#00E676',B:'#00B0FF',C:'#FFD600',D:'#FF9100',F:'#FF5252'}; return c[g]||'#6B7280'; };
+
+  var h = '<div style="font-family:IBM Plex Sans Thai,sans-serif;font-size:10pt;color:#C8D3DE;padding:10px">';
+  h += '<h2 style="font-size:16pt;color:var(--accent);text-align:center;margin-bottom:4px">รายงานการใช้เครื่อง AED</h2>';
+  h += '<div style="text-align:center;color:var(--text2);font-size:9pt;margin-bottom:16px">Automated External Defibrillator — Usage Report</div>';
+
+  if (qa.overall_grade) {
+    h += '<div style="text-align:center;margin-bottom:16px"><div style="display:inline-block;background:'+gc(qa.overall_grade)+';color:#000;font-size:32pt;font-weight:700;width:72px;height:72px;border-radius:50%;line-height:72px">'+qa.overall_grade+'</div>';
+    h += '<div style="font-size:11pt;font-weight:600;margin-top:6px;color:'+gc(qa.overall_grade)+'">'+(qa.overall_score?qa.overall_score+'/100':'')+'</div></div>';
+  }
+  if (qa.summary) h += '<div style="background:rgba(0,176,255,.08);border:1px solid rgba(0,176,255,.2);border-radius:8px;padding:12px;margin-bottom:14px;font-size:10pt;line-height:1.8">'+qa.summary+'</div>';
+
+  h += '<table style="width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:14px">';
+  [['วันที่',ic.date||'-'],['เวลา',ic.time||'-'],['เครื่อง',(d.model||'-')+' (S/N: '+(d.serial||'-')+')'],['ผู้ปฏิบัติการ',o.name||'-'],['Shock/CPR',(r.shocks||[]).length+'/'+(r.cpr_rounds||[]).length]].forEach(function(row){
+    h += '<tr><td style="font-weight:600;background:rgba(255,255,255,.03);border:1px solid var(--border);padding:6px;width:140px">'+row[0]+'</td><td style="border:1px solid var(--border);padding:6px">'+row[1]+'</td></tr>';
+  });
+  h += '</table>';
+
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">';
+  [{v:m.overall_avg_depth||'-',u:'mm',l:'ลึก',c:cc(m.overall_depth_compliance||0)},{v:m.overall_avg_rate||'-',u:'bpm',l:'อัตรา',c:cc(m.overall_rate_compliance||0)},{v:m.overall_avg_release||'-',u:'%',l:'ปล่อย',c:cc(m.overall_release_compliance||0)},{v:m.total_rounds||'-',u:'',l:'รอบ CPR',c:'var(--accent)'}].forEach(function(s){
+    h += '<div style="background:rgba(255,255,255,.03);border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:18pt;font-weight:700;color:'+s.c+'">'+s.v+'<span style="font-size:9pt">'+s.u+'</span></div><div style="font-size:8pt;color:var(--text2)">'+s.l+'</div></div>';
+  });
+  h += '</div>';
+
+  if (qa.critical_issues && qa.critical_issues.length) {
+    h += '<div style="font-weight:700;font-size:11pt;margin:14px 0 8px;color:var(--offline)">&#9888; ปัญหาสำคัญ</div>';
+    qa.critical_issues.forEach(function(x){ h += '<div style="background:rgba(255,82,82,.08);border-left:3px solid var(--offline);padding:8px 12px;margin-bottom:6px;font-size:9pt;border-radius:0 6px 6px 0">'+x+'</div>'; });
+  }
+  if (qa.strengths && qa.strengths.length) {
+    h += '<div style="font-weight:700;font-size:11pt;margin:14px 0 8px;color:var(--online)">&#9989; จุดแข็ง</div>';
+    qa.strengths.forEach(function(x){ h += '<div style="background:rgba(0,230,118,.08);border-left:3px solid var(--online);padding:8px 12px;margin-bottom:6px;font-size:9pt;border-radius:0 6px 6px 0">'+x+'</div>'; });
+  }
+  if (r.recommendations && r.recommendations.length) {
+    h += '<div style="font-weight:700;font-size:11pt;margin:14px 0 8px;color:var(--accent)">&#128161; ข้อเสนอแนะ</div>';
+    r.recommendations.forEach(function(x,i){ h += '<div style="padding:6px 0 6px 12px;border-left:3px solid var(--accent);margin-bottom:6px;font-size:9pt;line-height:1.7">'+(i+1)+'. '+x+'</div>'; });
+  }
+  h += '<div style="text-align:center;color:var(--text2);font-size:8pt;margin-top:20px">Primedic myAED Platform &mdash; AED Report System</div></div>';
   return h;
 }
 
-function printReport(){if(!decReport)return;const w=window.open("","_blank");w.document.write(genReportHTML(decReport));w.document.close();setTimeout(()=>w.print(),400);}
-function downloadHTML(){if(!decReport)return;const b=new Blob([genReportHTML(decReport)],{type:"text/html;charset=utf-8"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="CPR_Report.html";a.click();URL.revokeObjectURL(u);}
-function downloadJSON(){if(!decReport)return;const b=new Blob([JSON.stringify(decReport,null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="AED_Data.json";a.click();URL.revokeObjectURL(u);}
-
-// ─── DEVICES ──────────────────────────────────────────
-function renderDevices(){
-  let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="margin:0;font-size:18px;font-weight:700;color:#E0E6ED">เครื่อง AED ('+DEVICES.length+')</h2><button class="btn btn-filled" onclick="openModal(\'modalAddDev\')">+ ลงทะเบียนเครื่อง</button></div>';
-  DEVICES.forEach(d=>{
-    const s=ST[d.status],sel=selectedDevice===d.sn;
-    h+='<div class="card device-card'+(sel?" selected":"")+'" style="border-color:'+(sel?"rgba(0,176,255,0.2)":"var(--border)")+'" onclick="selectDevice(\''+d.sn+'\')">';
-    h+='<div style="display:flex;align-items:center;gap:12px"><div style="width:38px;height:38px;border-radius:9px;background:'+s.color+'15;border:1px solid '+s.color+'33;display:flex;align-items:center;justify-content:center;font-size:18px">⚡</div><div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:1px"><span style="font-weight:700;font-size:13px;color:#E0E6ED;font-family:var(--mono)">'+d.sn+'</span>'+badgeHTML(d.status)+'</div><div style="font-size:11px;color:var(--text2)">'+d.model+' · '+d.customer+'</div></div><div style="text-align:right">'+batteryHTML(d.battery)+'<div style="font-size:10px;color:var(--text3);margin-top:3px">'+d.installDate+'</div></div></div>';
-    if(sel){
-      h+='<div class="device-detail"><div><span style="color:var(--text3)">ยี่ห้อ:</span> '+d.brand+'</div><div><span style="color:var(--text3)">ตำแหน่ง:</span> '+d.location+'</div><div><span style="color:var(--text3)">ตรวจ:</span> '+d.lastCheck+'</div><div><span style="color:var(--text3)">Pad:</span> '+d.padExpiry+'</div><div><span style="color:var(--text3)">Temp:</span> '+(d.temp||"-")+'°C</div><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();mockApi(\'/openapi/device-installation\',\'E\')">แก้ไข</button><button class="btn btn-sm" style="background:rgba(255,82,82,0.12);color:var(--red);border:none" onclick="event.stopPropagation();mockApi(\'/openapi/device-installation\',\'D\')">ลบ</button></div></div>';
-    }
-    h+='</div>';
-  });
-  return h;
+function decPrint() {
+  if (!decRptData) return;
+  var h = '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet><style>body{font-family:IBM Plex Sans Thai,sans-serif;max-width:210mm;margin:0 auto;background:#fff;color:#1E293B}:root{--online:#059669;--warning:#D97706;--offline:#DC2626;--accent:#2563EB;--text2:#64748B;--border:#E2E8F0}</style></head><body>'+decGenReport(decRptData).replace(/var\(--online\)/g,'#059669').replace(/var\(--warning\)/g,'#D97706').replace(/var\(--offline\)/g,'#DC2626').replace(/var\(--accent\)/g,'#2563EB').replace(/var\(--text2\)/g,'#64748B').replace(/var\(--border\)/g,'#E2E8F0').replace(/var\(--text\)/g,'#1E293B').replace(/color:#C8D3DE/g,'color:#1E293B').replace(/rgba\(255,255,255,\.03\)/g,'#F8FAFC').replace(/rgba\(0,176,255,\.08\)/g,'#EFF6FF').replace(/rgba\(255,82,82,\.08\)/g,'#FEF2F2').replace(/rgba\(0,230,118,\.08\)/g,'#F0FDF4')+'</body></html>';
+  var w = window.open('','_blank');
+  w.document.write(h);
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 800);
 }
 
-// ─── CUSTOMERS ────────────────────────────────────────
-function renderCustomers(){
-  let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="margin:0;font-size:18px;font-weight:700;color:#E0E6ED">ลูกค้า ('+CUSTOMERS.length+')</h2><button class="btn btn-filled" onclick="openModal(\'modalAddCust\')">+ เพิ่มลูกค้า</button></div>';
-  CUSTOMERS.forEach(c=>{
-    h+='<div class="card cust-card"><div class="cust-header"><div class="cust-avatar">'+c.name.charAt(0)+'</div><div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:1px"><span style="font-weight:700;font-size:13px;color:#E0E6ED">'+c.name+'</span>'+badgeHTML(c.status)+'</div><div style="font-size:11px;color:var(--text2)">'+c.contact+' · '+c.province+', '+c.country+'</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700;color:var(--accent);font-family:var(--mono)">'+c.devices+'</div><div style="font-size:9px;color:var(--text3)">เครื่อง</div></div></div>';
-    h+='<div class="cust-actions"><span class="cust-tag">📧 '+c.email+'</span><span class="cust-tag">📞 '+c.phone+'</span><div style="flex:1"></div><button class="btn btn-outline btn-sm" onclick="mockApi(\'/openapi/customer\',\'E\')">แก้ไข</button><button class="btn btn-sm" style="background:rgba(255,82,82,0.12);color:var(--red);border:none" onclick="mockApi(\'/openapi/customer\',\'D\')">ลบ</button></div></div>';
-  });
-  return h;
+function decDownloadHTML() {
+  if (!decRptData) return;
+  var h = '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>AED Report</title><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet"></head><body style="background:#0A1018;color:#C8D3DE">'+decGenReport(decRptData)+'</body></html>';
+  var blob = new Blob([h], {type:'text/html;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'AED_Report_' + (decRptData.incident && decRptData.incident.date || 'report') + '.html';
+  a.click();
 }
 
-// ─── API CONSOLE ──────────────────────────────────────
-function renderAPI(){
-  let h='<h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:#E0E6ED">API Console</h2><p style="color:var(--text2);font-size:12px;margin-bottom:16px">Primedic IOT Platform-AED v1.0.0.1</p>';
-  h+='<div class="api-grid">';
-  [{l:"สร้างลูกค้า",ep:"/openapi/customer",o:"C",c:"var(--green)"},{l:"แก้ไขลูกค้า",ep:"/openapi/customer",o:"E",c:"var(--accent)"},{l:"ลงทะเบียนเครื่อง",ep:"/openapi/device-installation",o:"C",c:"var(--purple)"},{l:"ลบเครื่อง",ep:"/openapi/device-installation",o:"D",c:"var(--red)"}].forEach(a=>{
-    h+='<button class="api-btn" onclick="mockApi(\''+a.ep+"','"+a.o+'\')"><div style="font-size:13px;font-weight:600;color:#E0E6ED;margin-bottom:3px">'+a.l+'</div><div style="font-size:10px;color:'+a.c+';font-family:var(--mono)">POST · optType: "'+a.o+'"</div></button>';
-  });
-  h+='</div>';
-  // Request/Response panel
-  h+='<div class="card api-panel"><div class="api-panel-header"><span class="api-method">POST</span><span style="font-family:var(--mono);font-size:11px;color:#7B8A9A">/openapi/customer</span></div><div class="api-panel-body"><div class="api-panel-side"><div class="api-label">Request</div><pre class="api-code" style="color:#7B8A9A">{\n  "appKey": "demo_key",\n  "timestamp": "'+Date.now()+'",\n  "sign": "MD5(key+ts+secret)",\n  "optType": "C",\n  "property": {\n    "customerName": "Test",\n    "country": "Thailand"\n  }\n}</pre></div><div class="api-panel-side"><div class="api-label">Response</div><pre class="api-code" style="color:var(--green)">{\n  "code": "200",\n  "message": "",\n  "data": [{\n    "customerCode": "c011...",\n    "primedicCustomerCode": "c97a..."\n  }]\n}</pre></div></div></div>';
-  // Call History
-  h+='<div class="card" style="margin-top:10px"><div class="section-title"><h3><span style="color:var(--purple)">📋</span> Call History</h3></div>';
-  API_LOGS.forEach((l,i)=>{
-    h+='<div class="api-log" style="border-bottom:'+(i<API_LOGS.length-1?"1px solid rgba(255,255,255,0.03)":"none")+'"><span style="font-family:var(--mono);color:var(--text3);font-size:10px;width:60px">'+l.time+'</span><span class="api-method">'+l.method+'</span><span style="font-family:var(--mono);color:#7B8A9A;flex:1;font-size:10px">'+l.endpoint+'</span><span style="font-family:var(--mono);color:'+(l.status===200?"var(--green)":"var(--red)")+';font-weight:600;font-size:10px">'+l.status+'</span><span style="font-family:var(--mono);color:#3A4A5A;font-size:9px">'+l.duration+'</span></div>';
-  });
-  h+='</div>';
-  h+='<div style="background:rgba(255,214,0,0.04);border:1px solid rgba(255,214,0,0.1);border-radius:10px;padding:12px 16px;margin-top:10px;font-size:11px;color:#A09050"><strong style="color:var(--yellow)">🔐 Auth:</strong> sign = MD5(appKey + timestamp + appSecret) 32 chars lowercase — ขอ credentials จาก Primedic</div>';
-  return h;
+function decDownloadJSON() {
+  if (!decRptData) return;
+  var blob = new Blob([JSON.stringify(decRptData, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'AED_Data.json';
+  a.click();
 }
 
-// ─── LIVE DATA UPDATE ─────────────────────────────────
-setInterval(()=>{
-  DEVICES.forEach(d=>{
-    if(d.status==="offline")return;
-    const p=liveData[d.sn]||{battery:[],temp:[]};
-    p.battery=[...p.battery.slice(-19),d.battery+Math.random()*4-2];
-    p.temp=[...p.temp.slice(-19),(d.temp||24)+Math.random()*3-1.5];
-    liveData[d.sn]=p;
-  });
-  if(currentTab==="monitor")render();
-},3000);
+function decReset() {
+  decFiles = [];
+  decHexData = {};
+  decRptData = null;
+  decStep = 'upload';
+  decRenderSteps();
+  document.getElementById('decUpload').style.display = 'block';
+  document.getElementById('decDecoding').style.display = 'none';
+  document.getElementById('decReport').style.display = 'none';
+  document.getElementById('decFileList').style.display = 'none';
+  document.getElementById('decFileList').innerHTML = '';
+  document.getElementById('decStartBtn').disabled = true;
+}
 
-// ─── INIT ─────────────────────────────────────────────
-render();
+// ==================== DEVICES TAB ====================
+function renderDevices() {
+  var h = '';
+  DEVICES.forEach(function(d, i) {
+    h += '<div class="device-expand" id="devExp'+i+'">';
+    h += '<div class="device-expand-hdr" onclick="toggleDeviceExpand('+i+')">';
+    h += '<span class="device-expand-arrow">&#9654;</span>';
+    h += '<span class="status-dot '+d.status+'"></span>';
+    h += '<div style="flex:1"><div class="dev-name">'+d.serial+'</div><div class="dev-loc">'+d.model+' &mdash; '+d.customer+'</div></div>';
+    h += batBar(d.battery) + ' ' + statusBadge(d.status);
+    h += '</div>';
+    h += '<div class="device-expand-body">';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:12px">';
+    h += '<div><strong>Serial:</strong> '+d.serial+'</div>';
+    h += '<div><strong>Model:</strong> '+d.model+'</div>';
+    h += '<div><strong>Customer:</strong> '+d.customer+'</div>';
+    h += '<div><strong>Location:</strong> '+d.location+'</div>';
+    h += '<div><strong>Coordinates:</strong> '+d.lat+', '+d.lng+'</div>';
+    h += '<div><strong>Battery:</strong> '+d.battery+'%</div>';
+    h += '<div><strong>Status:</strong> '+d.status+'</div>';
+    h += '<div><strong>Last Check:</strong> 2026-04-02 06:00</div>';
+    h += '</div>';
+    h += '<div style="margin-top:12px;display:flex;gap:8px">';
+    h += '<button class="btn btn-outline" style="font-size:11px" onclick="toast(\'Ping sent to '+d.serial+'\',\'info\')">Ping Device</button>';
+    h += '<button class="btn btn-outline" style="font-size:11px" onclick="toast(\'Config synced\',\'success\')">Sync Config</button>';
+    h += '</div>';
+    h += '</div></div>';
+  });
+  document.getElementById('devicesListEl').innerHTML = h;
+}
+
+function toggleDeviceExpand(i) {
+  document.getElementById('devExp'+i).classList.toggle('open');
+}
+
+// ==================== CUSTOMERS TAB ====================
+function renderCustomers() {
+  var h = '';
+  CUSTOMERS.forEach(function(c) {
+    var devCount = DEVICES.filter(function(d){ return d.custId === c.id; }).length;
+    var onlineCount = DEVICES.filter(function(d){ return d.custId === c.id && d.status === 'online'; }).length;
+    var statusBdg = c.status === 'active' ? '<span class="badge badge-online">ACTIVE</span>' : '<span class="badge badge-warning">PENDING</span>';
+    h += '<div class="cust-card">';
+    h += '<div class="cust-hdr">';
+    h += '<div class="cust-avatar" style="background:rgba(0,176,255,.12)">'+c.emoji+'</div>';
+    h += '<div style="flex:1"><div class="cust-name">'+c.name+' '+statusBdg+'</div><div class="cust-meta">'+c.city+' &bull; '+c.contact+'</div></div>';
+    h += '</div>';
+    h += '<div style="font-size:11px;color:var(--text2);margin-bottom:6px"><span style="margin-right:16px">&#128231; '+c.email+'</span><span>&#128222; '+c.phone+'</span></div>';
+    h += '<div class="cust-stats">';
+    h += '<div class="cust-stat"><div class="cust-stat-val" style="color:var(--accent)">'+c.devices+'</div><div class="cust-stat-lbl">Total Devices</div></div>';
+    h += '<div class="cust-stat"><div class="cust-stat-val" style="color:var(--online)">'+onlineCount+'</div><div class="cust-stat-lbl">Online</div></div>';
+    h += '<div class="cust-stat"><div class="cust-stat-val" style="color:var(--accent)">'+devCount+'</div><div class="cust-stat-lbl">Registered</div></div>';
+    h += '</div></div>';
+  });
+  document.getElementById('customersListEl').innerHTML = h;
+}
+
+// ==================== API CONSOLE ====================
+var apiHistoryLog = [];
+
+function apiCall(method, path) {
+  var ts = new Date().toLocaleTimeString('th-TH');
+  var response;
+
+  if (path === '/api/devices') {
+    response = {status:200, data: DEVICES.map(function(d){ return {serial:d.serial,model:d.model,status:d.status,battery:d.battery}; })};
+  } else if (path.includes('/api/devices/') && !path.includes('ping')) {
+    var serial = path.split('/').pop();
+    var dev = DEVICES.find(function(d){ return d.serial === serial; });
+    response = dev ? {status:200, data:dev} : {status:404, error:'Device not found'};
+  } else if (path === '/api/customers') {
+    response = {status:200, data: CUSTOMERS.map(function(c){ return {id:c.id,name:c.name,city:c.city,devices:c.devices,status:c.status}; })};
+  } else if (path === '/api/alerts') {
+    response = {status:200, data: ALERTS};
+  } else if (path === '/api/devices/ping') {
+    response = {status:200, data:{message:'Ping sent to all online devices',count:6}};
+  } else if (path === '/api/decode') {
+    response = {status:200, data:{message:'Use the Decoder tab to decode AED files'}};
+  } else {
+    response = {status:404, error:'Not found'};
+  }
+
+  var reqStr = method + ' ' + path + '\nHost: myaed-platform.vercel.app\nContent-Type: application/json\n\n';
+  var resStr = 'HTTP/1.1 ' + response.status + ' OK\n\n' + JSON.stringify(response.data || response, null, 2);
+  document.getElementById('apiViewer').innerHTML = '<span style="color:var(--accent)">// Request</span>\n<span style="color:var(--online)">'+method+'</span> '+path+'\n\n<span style="color:var(--accent)">// Response '+response.status+'</span>\n'+JSON.stringify(response.data || response, null, 2);
+
+  apiHistoryLog.unshift({method:method, path:path, status:response.status, time:ts});
+  if (apiHistoryLog.length > 20) apiHistoryLog.pop();
+  renderApiHistory();
+  toast(method + ' ' + path + ' -> ' + response.status, response.status === 200 ? 'success' : 'error');
+}
+
+function renderApiHistory() {
+  var h = '';
+  apiHistoryLog.forEach(function(c) {
+    h += '<div class="api-log-row"><span class="api-method '+c.method.toLowerCase()+'">'+c.method+'</span><span style="flex:1;font-family:JetBrains Mono,monospace;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.path+'</span><span class="badge '+(c.status===200?'badge-online':'badge-offline')+'">'+c.status+'</span><span class="alert-time">'+c.time+'</span></div>';
+  });
+  document.getElementById('apiHistory').innerHTML = h || '<div style="color:var(--text2);font-size:12px;padding:16px;text-align:center">No calls yet</div>';
+}
+
+// ==================== RESPONSIVE ====================
+function checkMobile() {
+  var isMobile = window.innerWidth <= 900;
+  document.getElementById('menuBtn').style.display = isMobile ? 'block' : 'none';
+  if (!isMobile) {
+    document.getElementById('sidebar').classList.remove('mobile-open');
+  }
+}
+window.addEventListener('resize', checkMobile);
+checkMobile();
+
+// ==================== INIT ====================
+renderOverview();
+renderMonitoring();
+renderDevices();
+renderCustomers();
+renderApiHistory();
 </script>
 </body>
 </html>
