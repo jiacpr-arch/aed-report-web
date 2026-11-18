@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>AED Fleet · JIA</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mut:#6b7280;--line:#e5e7eb;--g:#16a34a;--y:#d97706;--r:#dc2626;--b:#2563eb;--gr:#9ca3af}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Sukhumvit Set","Noto Sans Thai",sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+header{background:#111827;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:1000}
+header h1{font-size:17px;margin:0;flex:1}header small{color:#9ca3af}
+button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer}
+button.pri{background:var(--b);color:#fff;border-color:var(--b)}button.danger{color:var(--r)}
+header button{background:#1f2937;color:#fff;border-color:#374151}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card b{display:block;font-size:24px}.card span{color:var(--mut);font-size:13px}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs button.on{background:#111827;color:#fff}
+.bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}.bar input,.bar select{flex:1;min-width:160px}
+input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff}
+textarea{min-height:140px;font-family:ui-monospace,monospace;font-size:13px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}
+th{background:#f9fafb;color:var(--mut);font-weight:600;font-size:13px}tr.row{cursor:pointer}tr.row:hover{background:#f9fafb}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.g{background:var(--g)}.y{background:var(--y)}.r{background:var(--r)}.n{background:var(--gr)}
+.mut{color:var(--mut);font-size:13px}.pill{display:inline-block;font-size:12px;padding:1px 7px;border-radius:99px;background:#eef2ff;color:#3730a3;margin:1px 2px}
+.pill.r{background:#fee2e2;color:#991b1b}.pill.y{background:#fef3c7;color:#92400e}.pill.g{background:#dcfce7;color:#166534}
+#map{height:520px;border-radius:12px;border:1px solid var(--line)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:2000;overflow:auto;padding:24px 10px}
+.modal.on{display:flex}.box{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:640px){.grid2{grid-template-columns:1fr}.hide-sm{display:none}}
+label{font-size:13px;color:var(--mut);display:block;margin-bottom:3px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:4px 10px;font-size:14px}.kv div:nth-child(odd){color:var(--mut)}
+.alert{border-left:3px solid var(--b);padding:6px 10px;margin:6px 0;background:#f9fafb;white-space:pre-wrap;font-size:13px}
+#login{max-width:360px;margin:12vh auto;background:#fff;padding:24px;border-radius:14px;border:1px solid var(--line)}
+.err{color:var(--r);font-size:14px;margin-top:8px}.ok{color:var(--g)}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;display:none;z-index:3000}
+</style>
+</head>
+<body>
+<div id="login">
+  <h2 style="margin-top:0">🫀 AED Fleet</h2>
+  <p class="mut">ระบบติดตามเครื่อง AED เช่า · JIA</p>
+  <label>รหัสผ่าน</label>
+  <input id="pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+  <label style="margin-top:8px;display:flex;gap:6px;align-items:center"><input id="rem" type="checkbox" style="width:auto"> จำไว้ในเครื่องนี้</label>
+  <button class="pri" style="width:100%;margin-top:12px" onclick="login()">เข้าสู่ระบบ</button>
+  <div id="lerr" class="err"></div>
+</div>
+
+<div id="app" style="display:none">
+<header>
+  <h1>🫀 AED Fleet <small id="upd"></small></h1>
+  <button onclick="load()">↻ รีเฟรช</button>
+  <button onclick="openEdit()">＋ เพิ่มเครื่อง</button>
+  <button onclick="logout()">ออก</button>
+</header>
+<main>
+  <div class="cards" id="cards"></div>
+  <div class="tabs">
+    <button data-t="list" class="on" onclick="tab('list')">📋 รายการเครื่อง</button>
+    <button data-t="map" onclick="tab('map')">🗺️ แผนที่</button>
+    <button data-t="alerts" onclick="tab('alerts')">🔔 ประวัติแจ้งเตือน</button>
+    <button data-t="bulk" onclick="tab('bulk')">📥 เพิ่มหลายเครื่อง</button>
+  </div>
+
+  <section id="t-list">
+    <div class="bar">
+      <input id="q" placeholder="ค้นหา S/N, ชื่อ, ลูกค้า, ที่ติดตั้ง…" oninput="render()">
+      <select id="fs" onchange="render()" style="max-width:200px">
+        <option value="">ทุกสถานะ</option><option value="r">🔴 ต้องดูด่วน</option><option value="y">🟡 ควรดู</option><option value="g">🟢 ปกติ</option><option value="n">⚪ ยังไม่มีข้อมูล / ปิดติดตาม</option>
+      </select>
+      <button onclick="exportCsv()">⬇︎ Excel (CSV)</button>
+    </div>
+    <table><thead><tr><th>สถานะ</th><th>เครื่อง</th><th class="hide-sm">ลูกค้า / ที่ติดตั้ง</th><th>แบต</th><th class="hide-sm">หมดอายุ</th><th>ติดต่อล่าสุด</th></tr></thead><tbody id="rows"></tbody></table>
+  </section>
+
+  <section id="t-map" style="display:none">
+    <div id="map"></div>
+    <p class="mut">พิกัดได้จากเสาสัญญาณมือถือ คลาดเคลื่อนได้หลายร้อยเมตร · เครื่องที่ยังไม่มีพิกัดจะไม่แสดงบนแผนที่</p>
+  </section>
+
+  <section id="t-alerts" style="display:none"><div id="alist"></div></section>
+
+  <section id="t-bulk" style="display:none">
+    <div class="card">
+      <p style="margin-top:0"><b style="font-size:16px;display:inline">วางข้อมูลจาก Excel / Google Sheets</b><br>
+      <span class="mut">หนึ่งบรรทัดต่อหนึ่งเครื่อง เรียงคอลัมน์ตามนี้ (คั่นด้วย Tab หรือ ,) — ใส่แค่ S/N ก็ได้ ช่องอื่นเติมทีหลัง</span></p>
+      <p class="mut" style="font-family:ui-monospace,monospace">S/N · ชื่อเครื่อง · ลูกค้า · ที่ติดตั้ง · ผู้ติดต่อ · เบอร์โทร</p>
+      <textarea id="bulk" placeholder="HS0Y824800160	AED Yuwell 062	บริษัท ตัวอย่าง	ล็อบบี้ ชั้น 1	คุณสมใจ	081-234-5678"></textarea>
+      <div style="margin-top:10px;display:flex;gap:8px"><button onclick="previewBulk()">ตรวจก่อน</button><button class="pri" onclick="saveBulk()">บันทึกทั้งหมด</button></div>
+      <div id="bprev" style="margin-top:10px"></div>
+      <p class="mut">เครื่องใหม่ที่บันทึก ระบบจะลงทะเบียนรับข้อมูลกับ Primedic ให้อัตโนมัติ ข้อมูลแรกจะเข้ามาตอน self-test (ทุกวันจันทร์ 08:00) หรือถอดแบตใส่ใหม่</p>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="modal" id="m"><div class="box" id="mbox"></div></div>
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const SB='https://tpoiyykbgsgnrdwzgzvn.supabase.co', KEY='sb_publishable_1kXSE788PB9XqH_2vU3pqg_6xtqI1Mf';
+const OFFLINE_H=192, WARN_D=60, LOW_BAT=20;
+let PW='', FLEET=[], map, layer;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function store(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+function read(k){try{return localStorage.getItem(k)||sessionStorage.getItem(k)}catch(e){return null}}
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',3000)}
+
+async function rpc(fn,args){
+  const r=await fetch(`${SB}/rest/v1/rpc/${fn}`,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_code:PW,...args})});
+  const j=await r.json().catch(()=>null);
+  if(!r.ok){const m=j?.message||('HTTP '+r.status);if(m.includes('รหัสผ่าน')){logout();}throw new Error(m)}
+  return j;
+}
+async function login(){
+  PW=$('pw').value.trim(); $('lerr').textContent='';
+  try{ await load(); if($('rem').checked) store('aedpw',PW); else {try{sessionStorage.setItem('aedpw',PW)}catch(e){}}
+    $('login').style.display='none'; $('app').style.display='block';
+  }catch(e){$('lerr').textContent=e.message}
+}
+function logout(){PW='';store('aedpw',null);try{sessionStorage.removeItem('aedpw')}catch(e){};$('app').style.display='none';$('login').style.display='block'}
+
+const fmt=d=>d?new Date(d).toLocaleString('th-TH',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Bangkok'}):'–';
+const fdate=d=>d?new Date(d+'T00:00:00').toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}):'–';
+const days=d=>d?Math.floor((new Date(d+'T00:00:00')-new Date())/864e5):null;
+const ago=d=>{if(!d)return 'ยังไม่เคย';const h=(Date.now()-new Date(d))/36e5;return h<1?'ไม่ถึง 1 ชม.':h<48?Math.floor(h)+' ชม.ที่แล้ว':Math.floor(h/24)+' วันที่แล้ว'};
+
+function assess(d){
+  const red=[],yel=[];
+  if(!d.active) return {s:'n',why:['ปิดการติดตาม']};
+  if(d.aed_status===2) red.push('สถานะเครื่องผิดปกติ');
+  if(d.last_selftest_result===2) red.push('Self-test ไม่ผ่าน');
+  if(d.battery_status===2) red.push('แบตผิดปกติ');
+  if(d.electrode_status===2) red.push('แผ่นแปะผิดปกติ');
+  const bd=days(d.battery_expiry), ed=days(d.electrode_expiry);
+  if(bd!==null&&bd<0) red.push('แบตหมดอายุ'); else if(bd!==null&&bd<=WARN_D) yel.push(`แบตหมดใน ${bd} วัน`);
+  if(ed!==null&&ed<0) red.push('แผ่นแปะหมดอายุ'); else if(ed!==null&&ed<=WARN_D) yel.push(`แผ่นแปะหมดใน ${ed} วัน`);
+  if(d.last_seen_at && (Date.now()-new Date(d.last_seen_at))/36e5>OFFLINE_H) red.push('ไม่ส่งข้อมูลเกิน 8 วัน');
+  if(d.battery_power!=null && d.battery_power<LOW_BAT) yel.push(`แบตเหลือ ${d.battery_power}%`);
+  if(d.km_from_home!=null && d.km_from_home>(d.geofence_km||3)) red.push(`ย้ายจากจุดติดตั้ง ~${d.km_from_home} กม.`);
+  if(d.last_working_mode===2 && d.last_seen_at && (Date.now()-new Date(d.last_seen_at))/36e5<72) red.push('มีการเปิดเครื่องล่าสุด');
+  if(!d.subscribed) yel.push(d.subscribe_error?'ลงทะเบียนไม่สำเร็จ':'รอลงทะเบียนกับ Primedic');
+  if(!d.last_seen_at) return {s:red.length?'r':'n',why:red.concat(yel,['ยังไม่มีข้อมูลจากเครื่อง'])};
+  return {s:red.length?'r':yel.length?'y':'g',why:red.concat(yel)};
+}
+
+async function load(){
+  FLEET=await rpc('aed_web_fleet',{});
+  FLEET.forEach(d=>d._a=assess(d));
+  $('upd').textContent='· อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  render(); if($('t-map').style.display!=='none') drawMap(); if($('t-alerts').style.display!=='none') loadAlerts();
+}
+function render(){
+  const c={r:0,y:0,g:0,n:0}; FLEET.forEach(d=>c[d._a.s]++);
+  $('cards').innerHTML=`<div class="card"><b>${FLEET.length}</b><span>เครื่องทั้งหมด</span></div>
+   <div class="card"><b style="color:var(--r)">${c.r}</b><span>🔴 ต้องดูด่วน</span></div>
+   <div class="card"><b style="color:var(--y)">${c.y}</b><span>🟡 ควรดู</span></div>
+   <div class="card"><b style="color:var(--g)">${c.g}</b><span>🟢 ปกติ</span></div>
+   <div class="card"><b style="color:var(--gr)">${c.n}</b><span>⚪ ยังไม่มีข้อมูล</span></div>`;
+  const q=$('q').value.toLowerCase(), fs=$('fs').value, ord={r:0,y:1,n:2,g:3};
+  const list=FLEET.filter(d=>(!fs||d._a.s===fs)&&(!q||[d.sn,d.label,d.customer_name,d.install_location,d.customer_contact,d.customer_phone].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>ord[a._a.s]-ord[b._a.s]||String(a.label||a.sn).localeCompare(String(b.label||b.sn),'th'));
+  $('rows').innerHTML=list.map(d=>`<tr class="row" onclick="openDev('${esc(d.sn)}')">
+    <td><span class="dot ${d._a.s}"></span><div class="mut">${d._a.why.slice(0,2).map(esc).join('<br>')||'ปกติ'}</div></td>
+    <td><b>${esc(d.label||d.sn)}</b><div class="mut">${esc(d.sn)}</div></td>
+    <td class="hide-sm">${esc(d.customer_name||'–')}<div class="mut">${esc(d.install_location||'')}</div></td>
+    <td>${d.battery_power!=null?d.battery_power+'%':'–'}</td>
+    <td class="hide-sm mut">แบต ${fdate(d.battery_expiry)}<br>แผ่น ${fdate(d.electrode_expiry)}</td>
+    <td class="mut">${ago(d.last_seen_at)}</td></tr>`).join('')||`<tr><td colspan="6" class="mut">ไม่พบเครื่อง</td></tr>`;
+}
+function tab(t){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  ['list','map','alerts','bulk'].forEach(x=>$('t-'+x).style.display=x===t?'':'none');
+  if(t==='map') drawMap(); if(t==='alerts') loadAlerts();}
+
+function drawMap(){
+  if(!map){map=L.map('map').setView([13.75,100.55],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);layer=L.layerGroup().addTo(map)}
+  setTimeout(()=>map.invalidateSize(),50); layer.clearLayers(); const pts=[];
+  const col={r:'#dc2626',y:'#d97706',g:'#16a34a',n:'#9ca3af'};
+  FLEET.filter(d=>d.lat!=null&&d.lng!=null).forEach(d=>{pts.push([d.lat,d.lng]);
+    L.circleMarker([d.lat,d.lng],{radius:9,color:'#fff',weight:2,fillColor:col[d._a.s],fillOpacity:.95}).addTo(layer)
+     .bindPopup(`<b>${esc(d.label||d.sn)}</b><br>${esc(d.customer_name||'')}<br>${esc(d._a.why.join(', ')||'ปกติ')}<br><a href="#" onclick="openDev('${esc(d.sn)}');return false">ดูรายละเอียด</a>`)});
+  if(pts.length) map.fitBounds(pts,{maxZoom:14,padding:[30,30]});
+}
+async function loadAlerts(){
+  const a=await rpc('aed_web_alerts',{p_limit:200});
+  $('alist').innerHTML=a.map(x=>`<div class="alert"><span class="mut">${fmt(x.at)} · ${esc(x.sn)}</span>\n${esc(x.message)}</div>`).join('')||'<p class="mut">ยังไม่มีการแจ้งเตือน</p>';
+}
+
+async function openDev(sn){
+  const d=FLEET.find(x=>x.sn===sn); if(!d) return;
+  $('mbox').innerHTML='<p class="mut">กำลังโหลด…</p>'; $('m').classList.add('on');
+  const [al,ev]=await Promise.all([rpc('aed_web_alerts',{p_sn:sn,p_limit:30}),rpc('aed_web_events',{p_sn:sn,p_limit:20})]).catch(e=>{toast(e.message);return [[],[]]});
+  const st={1:'ปกติ',2:'ผิดปกติ'}, mode={1:'Self-test',2:'เปิดเครื่อง'}, stt={1:'ใส่แบต',2:'รายวัน',3:'รายสัปดาห์',4:'รายเดือน',5:'ราย 6 เดือน'};
+  $('mbox').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h3 style="margin:0"><span class="dot ${d._a.s}"></span>${esc(d.label||d.sn)}</h3><button onclick="closeM()">✕</button></div>
+    <p>${d._a.why.map(w=>`<span class="pill ${d._a.s}">${esc(w)}</span>`).join('')||'<span class="pill g">ปกติ</span>'}</p>
+    <div class="kv">
+      <div>S/N</div><div>${esc(d.sn)} ${d.aed_type?'· '+esc(d.aed_type):''}</div>
+      <div>ลูกค้า</div><div>${esc(d.customer_name||'–')}</div>
+      <div>ที่ติดตั้ง</div><div>${esc(d.install_location||'–')}</div>
+      <div>ผู้ติดต่อ</div><div>${esc(d.customer_contact||'–')} ${d.customer_phone?`· <a href="tel:${esc(d.customer_phone)}">${esc(d.customer_phone)}</a>`:''}</div>
+      <div>สถานะเครื่อง</div><div>${st[d.aed_status]||'–'}</div>
+      <div>Self-test ล่าสุด</div><div>${fmt(d.last_selftest_at)} · ${st[d.last_selftest_result]||'–'}</div>
+      <div>แบตเตอรี่</div><div>${d.battery_power!=null?d.battery_power+'%':'–'} · ${st[d.battery_status]||'–'} · หมด ${fdate(d.battery_expiry)}</div>
+      <div>แผ่นแปะ</div><div>${st[d.electrode_status]||'–'} · หมด ${fdate(d.electrode_expiry)}</div>
+      <div>สัญญาณ 4G</div><div>${d.lte_rssi!=null?d.lte_rssi+' / 5':'–'} · SIM ${esc(d.sim_card_num||'–')}</div>
+      <div>ติดต่อล่าสุด</div><div>${fmt(d.last_seen_at)} (${ago(d.last_seen_at)})</div>
+      <div>ตำแหน่ง</div><div>${d.lat!=null?`<a target="_blank" href="https://maps.google.com/?q=${d.lat},${d.lng}">เปิดแผนที่</a>${d.km_from_home!=null?' · ห่างจุดติดตั้ง '+d.km_from_home+' กม.':''}`:'ยังไม่มีพิกัด'}</div>
+      <div>ลงทะเบียน Primedic</div><div>${d.subscribed?'✅ แล้ว':(d.subscribe_error?'❌ '+esc(d.subscribe_error):'⏳ กำลังลงทะเบียน')} <button style="padding:2px 8px;font-size:12px" onclick="resub('${esc(d.sn)}')">ลงทะเบียนใหม่</button></div>
+      ${d.notes?`<div>หมายเหตุ</div><div style="white-space:pre-wrap">${esc(d.notes)}</div>`:''}
+    </div>
+    <div style="margin:14px 0;display:flex;gap:8px;flex-wrap:wrap"><button class="pri" onclick="openEdit('${esc(d.sn)}')">✏️ แก้ไขข้อมูล</button></div>
+    <h4>🔔 แจ้งเตือนล่าสุด</h4>${al.map(x=>`<div class="alert"><span class="mut">${fmt(x.at)}</span>\n${esc(x.message)}</div>`).join('')||'<p class="mut">ยังไม่มี</p>'}
+    <h4>📡 ข้อมูลที่เครื่องส่งมา</h4>
+    <table><tr><th>เวลารับ</th><th>ประเภท</th><th>ผล</th><th>แบต</th></tr>${ev.map(e=>`<tr><td class="mut">${fmt(e.received_at)}</td><td>${mode[e.working_mode]||'–'}${e.selftest_type?' · '+(stt[e.selftest_type]||e.selftest_type):''}</td><td>${st[e.selftest_result]||'–'}</td><td>${e.battery_power??'–'}%</td></tr>`).join('')||'<tr><td colspan="4" class="mut">ยังไม่มี</td></tr>'}</table>`;
+}
+function closeM(){$('m').classList.remove('on')}
+$('m').addEventListener('click',e=>{if(e.target.id==='m')closeM()});
+
+function openEdit(sn){
+  const d=sn?FLEET.find(x=>x.sn===sn):{active:true};
+  const f=(k,l,ph='')=>`<div><label>${l}</label><input id="e_${k}" value="${esc(d[k]??'')}" placeholder="${esc(ph)}"></div>`;
+  $('mbox').innerHTML=`<div style="display:flex;justify-content:space-between"><h3 style="margin:0">${sn?'แก้ไขเครื่อง':'เพิ่มเครื่องใหม่'}</h3><button onclick="closeM()">✕</button></div>
+   <div class="grid2" style="margin-top:12px">
+    <div><label>S/N (ดูที่ด้านหลังเครื่อง)</label><input id="e_sn" value="${esc(d.sn||'')}" ${sn?'disabled':''} placeholder="HS0Y8…"></div>
+    ${f('label','ชื่อเครื่อง','เช่น AED Yuwell 062')}
+    ${f('customer_name','ลูกค้า / บริษัท')}
+    ${f('install_location','จุดติดตั้ง','เช่น ล็อบบี้ ชั้น 1 อาคาร A')}
+    ${f('customer_contact','ผู้ติดต่อ')}
+    ${f('customer_phone','เบอร์โทร')}
+    <div><label>รัศมีแจ้งเตือนย้ายเครื่อง (กม.)</label><input id="e_geofence_km" type="number" step="0.5" value="${esc(d.geofence_km??'')}" placeholder="ค่าเริ่มต้น 3"></div>
+    <div><label>สถานะการติดตาม</label><select id="e_active"><option value="true" ${d.active!==false?'selected':''}>ติดตาม (เครื่องอยู่กับลูกค้า)</option><option value="false" ${d.active===false?'selected':''}>ปิดติดตาม (คืนเครื่อง / อยู่ในคลัง)</option></select></div>
+   </div>
+   <div style="margin-top:10px"><label>หมายเหตุ</label><textarea id="e_notes" style="min-height:70px;font-family:inherit">${esc(d.notes||'')}</textarea></div>
+   ${sn&&d.home_lat!=null?`<label style="display:flex;gap:6px;align-items:center;margin-top:8px"><input id="e_reset" type="checkbox" style="width:auto"> ลูกค้าย้ายจุดติดตั้ง — ให้ระบบจำตำแหน่งใหม่</label>`:''}
+   <div id="eerr" class="err"></div>
+   <div style="margin-top:14px;display:flex;gap:8px"><button class="pri" onclick="saveDev(${sn?`'${esc(sn)}'`:'null'})">บันทึก</button><button onclick="closeM()">ยกเลิก</button></div>`;
+  $('m').classList.add('on');
+}
+async function saveDev(sn){
+  const v=k=>$('e_'+k)?.value??'';
+  const p={sn:sn||v('sn'),label:v('label'),customer_name:v('customer_name'),install_location:v('install_location'),customer_contact:v('customer_contact'),customer_phone:v('customer_phone'),notes:v('notes'),geofence_km:v('geofence_km'),active:v('active')==='true'};
+  if($('e_reset')?.checked) p.reset_home=true;
+  try{const r=await rpc('aed_web_save_device',{p});closeM();toast(r.created?'เพิ่มเครื่องแล้ว กำลังลงทะเบียนกับ Primedic':'บันทึกแล้ว');setTimeout(load,1500);}
+  catch(e){$('eerr').textContent=e.message}
+}
+async function resub(sn){try{await rpc('aed_web_resubscribe',{p_sn:sn});toast('ส่งคำขอลงทะเบียนแล้ว');setTimeout(()=>load().then(()=>openDev(sn)),2500)}catch(e){toast(e.message)}}
+
+function parseBulk(){
+  return $('bulk').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{
+    const c=(l.includes('\t')?l.split('\t'):l.split(',')).map(x=>x.trim());
+    return {sn:(c[0]||'').toUpperCase().replace(/\s/g,''),label:c[1]||'',customer_name:c[2]||'',install_location:c[3]||'',customer_contact:c[4]||'',customer_phone:c[5]||''};
+  }).filter(r=>r.sn && !/^S\/?N$/i.test(r.sn)).map(r=>{Object.keys(r).forEach(k=>{if(k!=='sn'&&r[k]==='')delete r[k]});return r});
+}
+function previewBulk(){const rows=parseBulk();
+  $('bprev').innerHTML=`<p class="mut">พบ ${rows.length} เครื่อง</p><table><tr><th>S/N</th><th>ชื่อ</th><th>ลูกค้า</th><th>ที่ติดตั้ง</th><th>ผู้ติดต่อ</th><th>โทร</th></tr>${rows.map(r=>`<tr><td>${/^[A-Z0-9]{8,20}$/.test(r.sn)?'':'⚠️ '}${esc(r.sn)}${FLEET.some(d=>d.sn===r.sn)?' <span class="pill">มีแล้ว·อัปเดต</span>':''}</td><td>${esc(r.label||'')}</td><td>${esc(r.customer_name||'')}</td><td>${esc(r.install_location||'')}</td><td>${esc(r.customer_contact||'')}</td><td>${esc(r.customer_phone||'')}</td></tr>`).join('')}</table>`}
+async function saveBulk(){const rows=parseBulk(); if(!rows.length) return toast('ยังไม่มีข้อมูล');
+  try{const r=await rpc('aed_web_bulk',{p_rows:rows});
+    $('bprev').innerHTML=`<p class="ok">บันทึกแล้ว ${r.saved} เครื่อง</p>`+(r.errors.length?`<p class="err">ผิดพลาด ${r.errors.length} รายการ:<br>${r.errors.map(e=>esc(e.sn+' — '+e.error)).join('<br>')}</p>`:'');
+    if(!r.errors.length) $('bulk').value=''; setTimeout(load,1500);
+  }catch(e){toast(e.message)}}
+
+function exportCsv(){
+  const h=['สถานะ','เหตุผล','S/N','ชื่อเครื่อง','ลูกค้า','ที่ติดตั้ง','ผู้ติดต่อ','เบอร์โทร','แบต%','แบตหมดอายุ','แผ่นแปะหมดอายุ','ติดต่อล่าสุด','self-test ล่าสุด','ลงทะเบียน','lat','lng'];
+  const s={r:'ต้องดูด่วน',y:'ควรดู',g:'ปกติ',n:'ยังไม่มีข้อมูล'};
+  const rows=FLEET.map(d=>[s[d._a.s],d._a.why.join('; '),d.sn,d.label,d.customer_name,d.install_location,d.customer_contact,d.customer_phone,d.battery_power,d.battery_expiry,d.electrode_expiry,fmt(d.last_seen_at),fmt(d.last_selftest_at),d.subscribed?'แล้ว':'ยัง',d.lat,d.lng]);
+  const csv='﻿'+[h,...rows].map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='aed-fleet-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+setInterval(()=>{if(PW&&document.visibilityState==='visible')load().catch(()=>{})},5*60*1000);
+(function(){const p=read('aedpw');if(p){$('pw').value=p;login()}})();
+</script>
+</body>
+</html>
