@@ -137,6 +137,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
 
 <main><div class="wrap">
   <section id="t-home">
+    <div id="health"></div>
     <div class="chips" id="chips"></div>
     <div id="todo"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 10px;gap:8px;flex-wrap:wrap">
@@ -198,7 +199,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
     <div class="panel">
       <h2>เครื่องส่งข้อมูลเมื่อไหร่</h2>
       <ul class="steps"><li>ทุกวันจันทร์ 08:00 เครื่องตรวจตัวเองแล้วส่งผล</li><li>เมื่อมีคนเปิดเครื่อง ระบบจะรู้หลังปิดเครื่องแล้วประมาณ 3 นาที</li><li>เมื่อถอดแบตแล้วใส่กลับ (ใช้ทดสอบได้ทันที)</li></ul>
-      <p class="mut">แจ้งเตือนทุกแบบส่งเข้า LINE ด้วย · ขั้นตอนรับมือแต่ละแจ้งเตือนอยู่ในเอกสาร "ขั้นตอนรับมือแจ้งเตือน AED (สำหรับทีม)"</p>
+      <p class="mut">ทุกวัน 09:00 ระบบดึงสถานะแบตและแผ่นแปะจาก Primedic ให้อีกทาง · วันจันทร์ 10:30 ถ้าเครื่องไหนไม่ส่งผล self-test จะมีแจ้งเตือน 🕗</p>
+      <p class="mut">แจ้งเตือนส่งเข้า LINE OA @273fzpzs (บอท jiaaed.com) เฉพาะช่วง 08:00–20:00 · นอกเวลานั้นจะส่งตอน 08:00 ให้ดูในหน้านี้แทน · แจ้งเตือนทุกแบบส่งเข้า LINE ด้วย · ขั้นตอนรับมือแต่ละแจ้งเตือนอยู่ในเอกสาร "ขั้นตอนรับมือแจ้งเตือน AED (สำหรับทีม)"</p>
     </div>
   </section>
 </div></main>
@@ -213,7 +215,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
 {
 const SB='https://tpoiyykbgsgnrdwzgzvn.supabase.co', KEY='sb_publishable_1kXSE788PB9XqH_2vU3pqg_6xtqI1Mf';
 const OFFLINE_H=192, WARN_D=60, LOW_BAT=20;
-let PW='', FLEET=[], FILTER='', map, layer;
+let PW='', FLEET=[], FILTER='', HEALTH=null, map, layer;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store=(k,v)=>{try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
@@ -264,7 +266,8 @@ function assess(d){
 const SL={r:'ต้องดูด่วน',y:'ควรดู',g:'ปกติ',n:'รอข้อมูล'}, ORD={r:0,y:1,n:2,g:3};
 
 async function load(){
-  FLEET=await rpc('aed_web_fleet',{});
+  const [f,h]=await Promise.all([rpc('aed_web_fleet',{}),rpc('aed_web_health',{}).catch(()=>null)]);
+  FLEET=f; HEALTH=h;
   FLEET.forEach(d=>d._a=assess(d));
   $('upd').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
   render();
@@ -273,7 +276,18 @@ async function load(){
 window.load=()=>load().catch(e=>toast(e.message));
 window.setFilter=f=>{FILTER=FILTER===f?'':f;render()};
 
+function renderHealth(){
+  const h=HEALTH; let html='';
+  if(h&&h.unsent>0&&h.oldest_unsent){
+    const mins=Math.round((Date.now()-new Date(h.oldest_unsent))/6e4);
+    const hr=Number(new Date().toLocaleString('en-GB',{hour:'2-digit',hour12:false,timeZone:'Asia/Bangkok'}));
+    if(hr>=8&&hr<20&&mins>20) html=`<div class="callout r"><b>⚠️ แจ้งเตือน LINE ค้างส่ง ${h.unsent} ข้อความ (นานสุด ${mins} นาที)</b><br><span class="small">ตัวส่ง LINE (cron ของ jiaaed.com) อาจหยุดทำงาน — ดูแจ้งเตือนในแท็บ "ประวัติแจ้งเตือน" แทน และแจ้งพี่เจี่ย</span></div>`;
+    else if((hr<8||hr>=20)&&mins>5) html=`<div class="callout y"><b>🌙 มี ${h.unsent} แจ้งเตือนรอส่ง LINE</b><br><span class="small">ตอนนี้นอกเวลาส่ง LINE (08:00–20:00) ข้อความจะส่งตอน 08:00 — ดูรายละเอียดได้ในแท็บ "ประวัติแจ้งเตือน"</span></div>`;
+  }
+  $('health').innerHTML=html;
+}
 function render(){
+  renderHealth();
   const c={r:0,y:0,g:0,n:0}; FLEET.forEach(d=>c[d._a.s]++);
   $('chips').innerHTML=`<button class="chip ${FILTER===''?'on':''}" onclick="setFilter('')"><b>${FLEET.length}</b><span>ทั้งหมด</span></button>`+
     ['r','y','g','n'].map(k=>`<button class="chip c-${k} ${FILTER===k?'on':''}" onclick="setFilter('${k}')"><b>${c[k]}</b><span>${SL[k]}</span></button>`).join('');
