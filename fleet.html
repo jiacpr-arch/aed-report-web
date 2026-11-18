@@ -194,7 +194,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
       <table><tr><td><span class="tag r">แดง · ต้องดูด่วน</span></td><td>เครื่องอาจไม่พร้อมช่วยชีวิต หรือมีคนเปิดเครื่อง หรือเงียบเกิน 8 วัน — ทำทันที</td></tr>
       <tr><td><span class="tag y">เหลือง · ควรดู</span></td><td>ใกล้หมดอายุภายใน 60 วัน แบตต่ำ หรือข้อมูลลูกค้ายังไม่ครบ — ทำภายในสัปดาห์</td></tr>
       <tr><td><span class="tag g">เขียว · ปกติ</span></td><td>ตรวจตัวเองผ่าน ทุกอย่างพร้อมใช้</td></tr>
-      <tr><td><span class="tag">เทา · รอข้อมูล</span></td><td>เพิ่งเพิ่มเข้าระบบ รอ self-test วันจันทร์ 08:00 หรือถอดแบตใส่ใหม่ หรือปิดการติดตามแล้ว</td></tr></table>
+      <tr><td><span class="tag">เทา · รอข้อมูล / คลัง</span></td><td>อยู่ในคลัง (ไม่แจ้งเตือน) หรือเพิ่งเพิ่มเข้าระบบ รอ self-test วันจันทร์ 08:00 หรือถอดแบตใส่ใหม่</td></tr></table>
+      <p class="mut">เครื่อง GPS ที่มี S/N ในระบบเช่า (class.jiacpr.com) จะถูกเพิ่มเข้าหน้านี้เอง และเปลี่ยนเป็น "อยู่กับลูกค้า" / "อยู่ในคลัง" ตามการปล่อยเช่าและรับคืน ทุก 10 นาที · ถ้าเลยกำหนดคืน จะขึ้นสีแดง</p>
     </div>
     <div class="panel">
       <h2>เครื่องส่งข้อมูลเมื่อไหร่</h2>
@@ -246,7 +247,12 @@ window.logout=()=>{PW='';store('aedpw',null);try{sessionStorage.removeItem('aedp
 // status + what to do next
 function assess(d){
   const red=[],yel=[],todo=[];
-  if(!d.active) return {s:'n',why:['ปิดการติดตาม'],todo:[]};
+  if(!d.active){const w=[d.rental_sync&&d.install_location==='คลัง'?'อยู่ในคลัง':'ปิดการติดตาม'];
+    const ed0=days(d.electrode_expiry),bd0=days(d.battery_expiry);
+    if(ed0!==null&&ed0<=WARN_D)w.push(ed0<0?'แผ่นแปะหมดอายุแล้ว — เปลี่ยนก่อนปล่อยเช่า':`แผ่นแปะหมดใน ${ed0} วัน — เปลี่ยนก่อนปล่อยเช่า`);
+    if(bd0!==null&&bd0<=WARN_D)w.push(bd0<0?'แบตหมดอายุแล้ว':`แบตหมดใน ${bd0} วัน`);
+    return {s:'n',why:w,todo:[]};}
+  if(d.rental_due_on){const od=-days(d.rental_due_on);if(od>0){red.push(`เลยกำหนดคืน ${od} วัน`);todo.push(`โทรตามคืนเครื่อง (กำหนดคืน ${fdate(d.rental_due_on)})`)}}
   const sinceH=d.last_seen_at?(Date.now()-new Date(d.last_seen_at))/36e5:null;
   if(d.last_working_mode===2 && sinceH!==null && sinceH<72){red.push('มีคนเปิดเครื่อง');todo.push('โทรหาลูกค้าภายใน 30 นาที ถามว่าใช้กับผู้ป่วยจริงหรือไม่')}
   if(d.km_from_home!=null && d.km_from_home>(d.geofence_km||3)){red.push(`ย้ายออกจากจุดติดตั้ง ~${d.km_from_home} กม.`);todo.push('โทรถามลูกค้าว่าย้ายเครื่องเองหรือเครื่องหาย')}
@@ -263,7 +269,7 @@ function assess(d){
   if(!d.last_seen_at){todo.push('รอ self-test วันจันทร์ 08:00 หรือถอดแบตใส่ใหม่เพื่อทดสอบทันที');return {s:red.length?'r':'n',why:red.concat(['รอข้อมูลครั้งแรก'],yel),todo}}
   return {s:red.length?'r':yel.length?'y':'g',why:red.concat(yel),todo};
 }
-const SL={r:'ต้องดูด่วน',y:'ควรดู',g:'ปกติ',n:'รอข้อมูล'}, ORD={r:0,y:1,n:2,g:3};
+const SL={r:'ต้องดูด่วน',y:'ควรดู',g:'ปกติ',n:'รอข้อมูล / คลัง'}, ORD={r:0,y:1,n:2,g:3};
 
 async function load(){
   const [f,h]=await Promise.all([rpc('aed_web_fleet',{}),rpc('aed_web_health',{}).catch(()=>null)]);
@@ -366,6 +372,7 @@ window.openDev=async sn=>{
       <dt>ลูกค้า</dt><dd>${esc(d.customer_name||'–')}</dd>
       <dt>จุดติดตั้ง</dt><dd>${esc(d.install_location||'–')}</dd>
       <dt>ผู้ติดต่อ</dt><dd>${esc(d.customer_contact||'–')}${d.customer_phone?' · '+esc(d.customer_phone):''}</dd>
+      ${d.rental_order_id?`<dt>งานเช่า</dt><dd>กำหนดคืน ${fdate(d.rental_due_on)} <span class="mut small">(จากระบบเช่า)</span></dd>`:''}
       <dt>S/N</dt><dd>${esc(d.sn)}${d.aed_type?' · '+esc(d.aed_type):''}</dd>
       <dt>ตรวจตัวเองล่าสุด</dt><dd>${fmt(d.last_selftest_at)}${d.last_selftest_result?' · '+ok[d.last_selftest_result]:''}</dd>
       <dt>แบตเตอรี่</dt><dd>${d.battery_power!=null?d.battery_power+'% · ':''}${st[d.battery_status]||''} หมดอายุ ${fdate(d.battery_expiry)}</dd>
@@ -406,6 +413,7 @@ window.openEdit=sn=>{
       ${f('customer_phone','เบอร์โทร','081-234-5678','tel')}
       <div><label for="e_active">สถานะ</label><select id="e_active"><option value="true" ${d.active!==false?'selected':''}>อยู่กับลูกค้า (ติดตาม)</option><option value="false" ${d.active===false?'selected':''}>คืนแล้ว / อยู่ในคลัง (ไม่แจ้งเตือน)</option></select></div>
       ${f('geofence_km','แจ้งเตือนเมื่อย้ายเกิน (กม.)','3','number')}
+      <label class="full" style="display:flex;gap:8px;align-items:flex-start;color:var(--ink)"><input id="e_rental_sync" type="checkbox" style="width:20px;min-height:20px;margin-top:3px" ${d.rental_sync!==false?'checked':''}> <span>อัปเดตลูกค้าและสถานะอัตโนมัติจากระบบเช่า (class.jiacpr.com)<br><span class="hint">เปิดไว้: เมื่อปล่อยเช่า/รับคืนในระบบเช่า หน้านี้จะเปลี่ยนตามเองภายใน 10 นาที (ข้อมูลที่แก้มือจะถูกทับ) · ปิดสำหรับเครื่องเช่ารายปีที่ไม่ได้อยู่ในระบบเช่า</span></span></label>
       ${sn&&d.home_lat!=null?`<label class="full" style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input id="e_reset" type="checkbox" style="width:20px;min-height:20px"> ลูกค้าย้ายจุดติดตั้งแล้ว — ให้ระบบจำตำแหน่งใหม่</label>`:''}
     </div>
     <div id="eerr" class="err"></div>
@@ -415,7 +423,7 @@ window.openEdit=sn=>{
 };
 window.saveDev=async sn=>{
   const v=k=>$('e_'+k)?.value??'';
-  const p={sn:sn||v('sn').toUpperCase().replace(/\s/g,''),label:v('label'),customer_name:v('customer_name'),install_location:v('install_location'),customer_contact:v('customer_contact'),customer_phone:v('customer_phone'),geofence_km:v('geofence_km'),active:v('active')==='true'};
+  const p={sn:sn||v('sn').toUpperCase().replace(/\s/g,''),label:v('label'),customer_name:v('customer_name'),install_location:v('install_location'),customer_contact:v('customer_contact'),customer_phone:v('customer_phone'),geofence_km:v('geofence_km'),active:v('active')==='true',rental_sync:!!$('e_rental_sync')?.checked};
   if($('e_reset')?.checked) p.reset_home=true;
   try{const r=await rpc('aed_web_save_device',{p});toast(r.created?'เพิ่มเครื่องแล้ว กำลังลงทะเบียนกับ Primedic':'บันทึกแล้ว');await load();setTimeout(load,4000);openDev(p.sn)}
   catch(e){$('eerr').textContent=e.message}
