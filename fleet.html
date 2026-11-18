@@ -130,6 +130,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
     <button data-t="map" onclick="tab('map')">แผนที่</button>
     <button data-t="alerts" onclick="tab('alerts')">ประวัติแจ้งเตือน</button>
     <button data-t="report" onclick="tab('report')">รายงานลูกค้า</button>
+    <button data-t="usb" onclick="tab('usb')">ไฟล์ USB</button>
     <button data-t="bulk" onclick="tab('bulk')">เพิ่มหลายเครื่อง</button>
     <button data-t="help" onclick="tab('help')">วิธีใช้</button>
   </nav>
@@ -173,6 +174,24 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
     <div id="rep"></div>
   </section>
 
+  <section id="t-usb" style="display:none">
+    <div class="panel">
+      <h2>อ่านไฟล์ที่ export จากเครื่องผ่าน USB</h2>
+      <ol class="steps"><li>เสียบแฟลชไดรฟ์ที่เครื่อง AED แล้ว export (จะได้โฟลเดอร์ชื่อแบบ <code>HS0Y824800160_20261116115101</code>)</li>
+      <li>เลือกโฟลเดอร์นั้น หรือไฟล์ .zip ของโฟลเดอร์ หรือลากมาวางในกรอบด้านล่าง</li>
+      <li>ดูรายการการเปิดเครื่องแต่ละครั้ง ฟังเสียงที่เครื่องอัด แล้วกด "บันทึกประวัติลงระบบ"</li></ol>
+      <div id="drop" style="border:2px dashed var(--line);border-radius:14px;padding:22px;text-align:center;margin-top:12px">
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <label class="btnlink" style="cursor:pointer;margin:0">📁 เลือกโฟลเดอร์<input id="usbDir" type="file" webkitdirectory directory multiple hidden onchange="usbFromInput(this.files)"></label>
+          <label class="btnlink" style="cursor:pointer;margin:0">🗜 เลือกไฟล์ .zip<input type="file" accept=".zip" hidden onchange="usbFromZip(this.files[0])"></label>
+        </div>
+        <p class="mut small" style="margin:10px 0 0">หรือลากโฟลเดอร์ / .zip มาวางตรงนี้</p>
+      </div>
+      <p class="hint">🔒 ไฟล์ถูกอ่านในเบราว์เซอร์เครื่องนี้เท่านั้น เสียงและ ECG ไม่ถูกอัปโหลด · ระบบบันทึกเฉพาะวันเวลา ระยะเวลา และรหัสเหตุการณ์ · ไม่เปิดอ่านไฟล์ตั้งค่าเครื่อง (config / user.json) เพราะมีรหัสผ่าน</p>
+    </div>
+    <div id="usbOut"></div>
+  </section>
+
   <section id="t-bulk" style="display:none">
     <div class="panel">
       <h2>เพิ่มหรืออัปเดตหลายเครื่องพร้อมกัน</h2>
@@ -213,6 +232,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
 <div id="toast"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 {
 const SB='https://tpoiyykbgsgnrdwzgzvn.supabase.co', KEY='sb_publishable_1kXSE788PB9XqH_2vU3pqg_6xtqI1Mf';
@@ -325,11 +345,11 @@ function render(){
 
 window.tab=t=>{
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  ['home','map','alerts','report','bulk','help'].forEach(x=>$('t-'+x).style.display=x===t?'':'none');
+  ['home','map','alerts','report','usb','bulk','help'].forEach(x=>$('t-'+x).style.display=x===t?'':'none');
   try{history.replaceState(null,'',t==='home'?location.pathname:'#'+t)}catch(e){}
   if(t==='map') drawMap(); if(t==='alerts') initAlerts(); if(t==='report') initReport();
 };
-function route(){const h=location.hash.slice(1);if(['map','alerts','report','bulk','help'].includes(h))tab(h)}
+function route(){const h=location.hash.slice(1);if(['map','alerts','report','usb','bulk','help'].includes(h))tab(h)}
 
 function drawMap(){
   if(!map){map=L.map('map').setView([13.75,100.55],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);layer=L.layerGroup().addTo(map)}
@@ -388,11 +408,13 @@ window.openDev=async sn=>{
     <textarea id="nlog" style="min-height:70px" placeholder="เช่น โทรคุณสมใจแล้ว เครื่องอยู่ที่เดิม ถอดแบตใส่ใหม่แล้ว"></textarea>
     <button style="margin-top:8px" onclick="addLog('${esc(d.sn)}')">บันทึก</button>
     ${d.notes?`<div class="log" style="margin-top:10px">${esc(d.notes)}</div>`:''}
+    <div class="sec">ประวัติการเปิดเครื่อง (จากไฟล์ USB)</div><div id="d_usb" class="mut">กำลังโหลด…</div>
     <div class="sec">แจ้งเตือนล่าสุด</div><div id="d_al" class="mut">กำลังโหลด…</div>
     <div class="sec">ข้อมูลที่เครื่องส่งมา</div><div id="d_ev" class="mut">กำลังโหลด…</div>`);
   try{const [al,ev]=await Promise.all([rpc('aed_web_alerts',{p_sn:sn,p_limit:20}),rpc('aed_web_events',{p_sn:sn,p_limit:20})]);
     $('d_al').innerHTML=al.map(x=>`<div class="log"><span class="mut small">${fmt(x.at)} ${DLV[x.delivery]||''}</span>\n${esc(x.message)}</div>`).join('')||'ยังไม่มี';
     $('d_ev').innerHTML=ev.length?`<table><tr><th>เวลา</th><th>รายการ</th><th>ผล</th><th>แบต</th></tr>${ev.map(e=>`<tr><td>${fmt(e.received_at)}</td><td>${e.working_mode===2?'เปิดเครื่อง':'Self-test '+(stt[e.selftest_type]||'')}</td><td>${e.working_mode===2?'–':(ok[e.selftest_result]||'–')}</td><td>${e.battery_power??'–'}%</td></tr>`).join('')}</table>`:'ยังไม่มี';
+    rpc('aed_web_usb_list',{p_sn:sn}).then(u=>{$('d_usb').innerHTML=u.length?`<table><tr><th>เปิดเครื่อง</th><th>นาน</th><th>เหตุการณ์</th></tr>${u.slice(0,15).map(x=>`<tr><td>${fmt(x.started_at)}</td><td>${dur(x.duration_s)}</td><td>${x.event_count}</td></tr>`).join('')}</table>${u.length>15?`<p class="mut small">และอีก ${u.length-15} ครั้ง</p>`:''}<p class="mut small">อัปโหลดล่าสุด ${fmt(u.reduce((a,x)=>x.uploaded_at>a?x.uploaded_at:a,''))}</p>`:'ยังไม่มี — export ไฟล์จากเครื่องแล้วอ่านในแท็บ "ไฟล์ USB"'}).catch(()=>{$('d_usb').textContent='–'});
   }catch(e){toast(e.message)}
 };
 window.addLog=async sn=>{
@@ -485,6 +507,96 @@ window.exportCsv=()=>{
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='aed-fleet-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 };
 window.render=render;
+
+// ---------- USB export reader (runs in the browser only) ----------
+const dur=s=>s==null?'–':s<60?Math.round(s)+' วิ':Math.floor(s/60)+' นาที '+Math.round(s%60)+' วิ';
+const SKIP=/(^|\/)(config\/|[^\/]*user\.json$|update\.bin$)/i;
+let USB=null;
+const drop=$('drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.style.borderColor='var(--brand)'});
+drop.addEventListener('dragleave',()=>drop.style.borderColor='');
+drop.addEventListener('drop',async e=>{e.preventDefault();drop.style.borderColor='';
+  const items=[...e.dataTransfer.items].map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
+  const f0=e.dataTransfer.files[0]; if(items.length===1&&items[0].isFile&&/\.zip$/i.test(items[0].name)) return usbFromZip(f0);
+  const out=[];
+  const walk=(ent,path)=>new Promise(res=>{
+    if(ent.isFile) ent.file(f=>{out.push({path:path+ent.name,get:()=>f,size:f.size});res()},()=>res());
+    else{const rd=ent.createReader(),all=[];const next=()=>rd.readEntries(async es=>{if(!es.length){for(const c of all)await walk(c,path+ent.name+'/');res()}else{all.push(...es);next()}},()=>res());next()}
+  });
+  $('usbOut').innerHTML='<p class="mut">กำลังอ่าน…</p>';
+  for(const it of items) await walk(it,'');
+  usbParse(out,'drop');
+});
+window.usbFromInput=files=>usbParse([...files].map(f=>({path:f.webkitRelativePath||f.name,get:()=>f,size:f.size})),'folder');
+window.usbFromZip=async file=>{
+  if(!file) return; $('usbOut').innerHTML='<p class="mut">กำลังแตกไฟล์ zip…</p>';
+  try{const z=await JSZip.loadAsync(file);const out=[];
+    z.forEach((path,ent)=>{if(!ent.dir)out.push({path,get:()=>ent.async('blob'),size:ent._data?.uncompressedSize||0})});
+    usbParse(out,file.name);
+  }catch(e){$('usbOut').innerHTML='';toast('เปิด zip ไม่ได้: '+e.message)}
+};
+const latin=async b=>{const buf=await (await b).arrayBuffer();let s='';const u=new Uint8Array(buf);for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return s};
+const EVR=/(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}) id: ?(\d+)/g;
+const toMs=t=>Date.parse(t.replace(' ','T')+'+07:00');
+async function usbParse(files,source){
+  files=files.map(f=>({...f,path:f.path.replace(/\\/g,'/')})).filter(f=>!SKIP.test(f.path));
+  if(!files.length){$('usbOut').innerHTML='';return toast('ไม่พบไฟล์')}
+  let sn=null,exportedAt=null;
+  for(const f of files){const m=f.path.match(/(HS0Y[0-9A-Z]{7,})_(\d{14})/i);if(m){sn=m[1].toUpperCase();exportedAt=m[2];break}}
+  const info={};
+  const sys=files.find(f=>/(^|\/)syslog\.bin$/i.test(f.path)&&!/patient\//i.test(f.path));
+  if(sys){const t=await latin(sys.get());const str=t.match(/[\x20-\x7e]{5,}/g)||[];
+    if(!sn){const m=t.match(/HS0Y[0-9A-Z]{7,}/);if(m)sn=m[0]}
+    info.fw=str.filter(x=>/->V\d/.test(x)).slice(0,6);}
+  const sess={};
+  for(const f of files){const m=f.path.match(/patient\/(\d{14})\/(.+)$/i);if(!m)continue;
+    (sess[m[1]]??={id:m[1],files:{}}).files[m[2].toLowerCase()]=f}
+  const list=[];
+  for(const k of Object.keys(sess).sort().reverse()){
+    const S=sess[k], st=Date.parse(`${k.slice(0,4)}-${k.slice(4,6)}-${k.slice(6,8)}T${k.slice(8,10)}:${k.slice(10,12)}:${k.slice(12,14)}+07:00`);
+    let ev=[];if(S.files['event.bin']){const t=await latin(S.files['event.bin'].get());for(const m of t.matchAll(EVR))ev.push([toMs(m[1]),Number(m[2])])}
+    const wavs=Object.keys(S.files).filter(n=>/^audio_\d+\.wav$/.test(n)).sort().map(n=>S.files[n]);
+    const wavSec=wavs.reduce((a,w)=>a+Math.max(0,(w.size-44)/22050),0);
+    const t0=ev.length?Math.min(...ev.map(e=>e[0])):st, evSec=ev.length?(Math.max(...ev.map(e=>e[0]))-t0)/1000:0;
+    list.push({id:k,start:new Date(t0).toISOString(),dur:Math.max(evSec,wavSec),events:ev.map(e=>[e[0]-t0,e[1]]),wavs,hasEcg:!!Object.keys(S.files).find(n=>/^ecg_/.test(n))});
+  }
+  let life=null;const se=files.find(f=>/(^|\/)sysevent\.bin$/i.test(f.path));
+  if(se){const t=await latin(se.get());const all=[...t.matchAll(EVR)].map(m=>m[1]);if(all.length)life={n:all.length,first:all[0],last:all[all.length-1]}}
+  USB={sn,exportedAt,info,list,life,source};
+  renderUsb();
+}
+function renderUsb(){
+  const U=USB, d=FLEET.find(x=>x.sn===U.sn);
+  const ex=U.exportedAt?`${U.exportedAt.slice(6,8)}/${U.exportedAt.slice(4,6)}/${U.exportedAt.slice(0,4)} ${U.exportedAt.slice(8,10)}:${U.exportedAt.slice(10,12)}`:'–';
+  $('usbOut').innerHTML=`<div class="panel">
+    <h2>${esc(d?nm(d):(U.sn||'ไม่ทราบ S/N'))}</h2>
+    <dl class="kv"><dt>S/N</dt><dd>${esc(U.sn||'–')} ${U.sn&&!d?'<span class="tag y">ยังไม่มีในระบบ</span>':''}</dd>
+    <dt>ลูกค้า</dt><dd>${esc(d?.customer_name||'–')}</dd><dt>export เมื่อ</dt><dd>${ex}</dd>
+    ${U.info.fw?.length?`<dt>เฟิร์มแวร์</dt><dd class="small">${U.info.fw.map(esc).join(' · ')}</dd>`:''}
+    ${U.life?`<dt>บันทึกทั้งเครื่อง</dt><dd>${U.life.n.toLocaleString()} เหตุการณ์ · ${esc(U.life.first.slice(0,10))} ถึง ${esc(U.life.last.slice(0,10))}</dd>`:''}
+    <dt>เปิดเครื่อง</dt><dd><b>${U.list.length} ครั้ง</b></dd></dl>
+    <div class="actions" style="flex-wrap:wrap">${U.sn?`<button class="pri" onclick="usbSave()">💾 บันทึกประวัติลงระบบ</button>`:''}${d?`<button onclick="openDev('${esc(d.sn)}')">ดูหน้าเครื่อง</button>`:''}</div>
+    <p class="hint">รหัสเหตุการณ์ (id) ยังเป็นตัวเลขดิบจากเครื่อง ความหมายจะเพิ่มให้เมื่อได้ตารางรหัสจาก Yuwell · ECG ยังแสดงไม่ได้</p></div>
+  <div class="panel"><h2>การเปิดเครื่องแต่ละครั้ง</h2>
+  <div style="overflow-x:auto"><table><tr><th>วันเวลา</th><th>นาน</th><th>เหตุการณ์</th><th>เสียง</th><th></th></tr>
+  ${U.list.map((x,i)=>`<tr><td>${fmt(x.start)}</td><td>${dur(x.dur)}</td><td>${x.events.length}${x.hasEcg?' <span class="tag">ECG</span>':''}</td>
+    <td>${x.wavs.length?`<button style="min-height:34px;padding:4px 10px" onclick="usbPlay(${i},this)">▶ ฟัง</button>`:'–'}</td>
+    <td><button class="ghost" style="min-height:34px;padding:4px 8px" onclick="usbTl(${i})">ไทม์ไลน์</button></td></tr>
+    <tr id="tl${i}" style="display:none"><td colspan="5"><div class="small" style="font-family:ui-monospace,monospace;columns:2 260px">${x.events.map(e=>`<div>+${(e[0]/1000).toFixed(1)}s · id ${e[1]}</div>`).join('')||'ไม่มีบันทึกเหตุการณ์'}</div></td></tr>`).join('')}
+  </table></div></div>`;
+}
+window.usbTl=i=>{const r=$('tl'+i);r.style.display=r.style.display==='none'?'':'none'};
+window.usbPlay=async(i,btn)=>{
+  const x=USB.list[i]; if(btn.nextSibling?.tagName==='AUDIO') return;
+  const a=document.createElement('audio');a.controls=true;a.style.cssText='display:block;margin-top:6px;max-width:260px';
+  a.src=URL.createObjectURL(await x.wavs[0].get());btn.after(a);a.play().catch(()=>{});
+};
+window.usbSave=async()=>{
+  const U=USB; if(!U?.sn) return;
+  try{const r=await rpc('aed_web_usb_save',{p_sn:U.sn,p_source:'USB export '+(U.exportedAt||''),p_sessions:U.list.map(x=>({started_at:x.start,duration_s:Math.round(x.dur*10)/10,event_count:x.events.length,events:x.events}))});
+    toast(`บันทึกแล้ว ${r.saved} ครั้ง`);
+  }catch(e){toast(e.message)}
+};
 setInterval(()=>{if(PW&&document.visibilityState==='visible')load().catch(()=>{})},5*60*1000);
 const saved=readS('aedpw'); if(saved){$('pw').value=saved;login()}
 }
