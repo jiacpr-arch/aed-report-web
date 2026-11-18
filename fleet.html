@@ -172,6 +172,11 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
       <div id="rnote" class="hint"></div>
     </div>
     <div id="rep"></div>
+    <div class="panel noprint" style="margin-top:16px">
+      <h2>แผนเปลี่ยนแผ่นแปะและแบต (12 เดือนข้างหน้า)</h2>
+      <p class="mut" style="margin-top:0">รวมเครื่องในคลังด้วย — ต้องเปลี่ยนก่อนปล่อยเช่า · ใช้วางแผนสั่งของล่วงหน้า</p>
+      <div id="plan"></div>
+    </div>
   </section>
 
   <section id="t-usb" style="display:none">
@@ -273,7 +278,8 @@ function assess(d){
     if(ed0!==null&&ed0<=WARN_D)w.push(ed0<0?'แผ่นแปะหมดอายุแล้ว — เปลี่ยนก่อนปล่อยเช่า':`แผ่นแปะหมดใน ${ed0} วัน — เปลี่ยนก่อนปล่อยเช่า`);
     if(bd0!==null&&bd0<=WARN_D)w.push(bd0<0?'แบตหมดอายุแล้ว':`แบตหมดใน ${bd0} วัน`);
     return {s:'n',why:w,todo:[]};}
-  if(d.rental_due_on){const od=-days(d.rental_due_on);if(od>0){red.push(`เลยกำหนดคืน ${od} วัน`);todo.push(`โทรตามคืนเครื่อง (กำหนดคืน ${fdate(d.rental_due_on)})`)}}
+  if(d.rental_due_on){const od=-days(d.rental_due_on);if(od>0){red.push(`เลยกำหนดคืน ${od} วัน`);todo.push(`โทรตามคืนเครื่อง (กำหนดคืน ${fdate(d.rental_due_on)})`)}
+    else if(!d.rental_sync&&-od<=90){yel.push(`สัญญาครบใน ${-od} วัน`);todo.push(`โทรเสนอต่อสัญญาก่อน ${fdate(d.rental_due_on)}`)}}
   const sinceH=d.last_seen_at?(Date.now()-new Date(d.last_seen_at))/36e5:null;
   if(d.last_working_mode===2 && sinceH!==null && sinceH<72){red.push('มีคนเปิดเครื่อง');todo.push('โทรหาลูกค้าภายใน 30 นาที ถามว่าใช้กับผู้ป่วยจริงหรือไม่')}
   if(d.km_from_home!=null && d.km_from_home>(d.geofence_km||3)){red.push(`ย้ายออกจากจุดติดตั้ง ~${d.km_from_home} กม.`);todo.push('โทรถามลูกค้าว่าย้ายเครื่องเองหรือเครื่องหาย')}
@@ -389,6 +395,7 @@ window.openDev=async sn=>{
     <div class="actions" style="flex-wrap:wrap">
       ${d.customer_phone?`<a class="btnlink" style="flex:1" href="tel:${esc(tel(d.customer_phone))}">📞 โทร ${esc(d.customer_phone)}</a>`:''}
       <button style="flex:1" onclick="openEdit('${esc(d.sn)}')">✏️ แก้ไขข้อมูล</button>
+      <button style="flex:1" onclick="sticker('${esc(d.sn)}')">🏷 สติกเกอร์ QR</button>
     </div>
     <dl class="kv">
       <dt>ลูกค้า</dt><dd>${esc(d.customer_name||'–')}</dd>
@@ -471,7 +478,33 @@ window.saveBulk=async()=>{const rows=parseBulk(); if(!rows.length) return toast(
   }catch(e){toast(e.message)}};
 
 // report
+function renderPlan(){
+  const now=new Date(), rows=[];
+  FLEET.filter(d=>!/S\/N ผิด/.test(d.label||'')).forEach(d=>[['แผ่นแปะ',d.electrode_expiry],['แบตเตอรี่',d.battery_expiry]].forEach(([k,v])=>{const n=days(v);if(n!==null&&n<=366)rows.push({d,k,v,n})}));
+  rows.sort((a,b)=>a.n-b.n);
+  const byM={};rows.forEach(r=>{const m=r.n<0?'หมดอายุแล้ว':new Date(r.v+'T00:00:00').toLocaleDateString('th-TH',{month:'short',year:'numeric'});(byM[m]??={pads:0,bat:0});r.k==='แผ่นแปะ'?byM[m].pads++:byM[m].bat++});
+  $('plan').innerHTML=rows.length?`<table><tr><th>เดือน</th><th>แผ่นแปะ (ชุด)</th><th>แบต (ก้อน)</th></tr>${Object.entries(byM).map(([m,c])=>`<tr><td>${m}</td><td>${c.pads||'–'}</td><td>${c.bat||'–'}</td></tr>`).join('')}</table>
+    <div class="sec">รายเครื่อง</div><table><tr><th>เครื่อง</th><th>ลูกค้า</th><th>อะไหล่</th><th>หมดอายุ</th></tr>${rows.map(r=>`<tr><td><a href="#" onclick="openDev('${esc(r.d.sn)}');return false">${esc(nm(r.d))}</a></td><td>${esc(r.d.customer_name||(r.d.active?'–':'ในคลัง'))}</td><td>${r.k}</td><td>${fdate(r.v)}${r.n<0?' <span class="tag r">หมดแล้ว</span>':r.n<=60?' <span class="tag y">'+r.n+' วัน</span>':''}</td></tr>`).join('')}</table>`
+    :'<p class="mut">ไม่มีอะไหล่ที่หมดอายุภายใน 12 เดือน</p>';
+}
+window.sticker=sn=>{
+  const d=FLEET.find(x=>x.sn===sn); if(!d?.public_token) return toast('ยังไม่มีรหัส QR ของเครื่องนี้');
+  const url=location.origin.replace(/^file:.*/,'https://aed-report-web.vercel.app')+'/r/'+d.public_token;
+  const w=window.open('','_blank'); if(!w) return toast('เบราว์เซอร์บล็อกหน้าต่างใหม่');
+  w.document.write(`<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><title>สติกเกอร์ ${esc(nm(d))}</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+  <style>body{font-family:"IBM Plex Sans Thai",sans-serif;margin:24px}.s{width:90mm;border:2px solid #c8102e;border-radius:6mm;padding:5mm;text-align:center}
+  .s h1{margin:0;font-size:6mm;color:#c8102e}.s p{margin:1.5mm 0;font-size:3.6mm}#q{display:flex;justify-content:center;margin:3mm 0}.u{font-size:2.6mm;color:#555;word-break:break-all}
+  @media print{button{display:none}body{margin:0}}</style></head><body>
+  <div class="s"><h1>AED พร้อมใช้หรือไม่?</h1><p>สแกนดูผลตรวจเครื่องล่าสุด และวิธีใช้</p><div id="q"></div>
+  <p><b>ฉุกเฉิน โทร 1669</b> · เปิดเครื่องแล้วทำตามเสียง</p><p class="u">${url}</p><p style="font-size:3mm">JIA TRAINER CENTER · 082-280-9999</p></div>
+  <p><button onclick="print()">🖨 พิมพ์</button> <a href="${url}" target="_blank">เปิดดูหน้าสถานะ</a></p>
+  <script>new QRCode(document.getElementById('q'),{text:${JSON.stringify(url)},width:180,height:180,correctLevel:QRCode.CorrectLevel.M});<\/script></body></html>`);
+  w.document.close();
+};
 function initReport(){
+  renderPlan();
   const cs=[...new Set(FLEET.map(d=>d.customer_name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
   const cur=$('rc').value;
   $('rc').innerHTML=cs.map(c=>`<option ${c===cur?'selected':''}>${esc(c)}</option>`).join('')+`<option value="" ${cs.length?'':'selected'}>(เครื่องที่ยังไม่ระบุลูกค้า)</option>`;

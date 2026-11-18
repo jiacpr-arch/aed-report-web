@@ -12,6 +12,10 @@
       "destination": "/fleet.html"
     },
     {
+      "source": "/r/:token",
+      "destination": "/ready.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -36,6 +40,19 @@
     },
     {
       "source": "/fleet(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/r/(.*)",
       "headers": [
         {
           "key": "X-Robots-Tag",

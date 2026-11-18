@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>AED พร้อมใช้ · JIA TRAINER CENTER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:17px/1.55 "IBM Plex Sans Thai",system-ui,sans-serif;background:#f4f5f7;color:#16181d}
+.wrap{max-width:520px;margin:0 auto;padding:16px}
+.sos{background:#c8102e;color:#fff;border-radius:18px;padding:18px 18px 16px}
+.sos h1{margin:0 0 6px;font-size:22px;line-height:1.25}
+.sos ol{margin:8px 0 12px;padding-left:22px}.sos li{margin:3px 0}
+.call{display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:#c8102e;font-weight:700;font-size:22px;border-radius:14px;padding:14px;text-decoration:none}
+.card{background:#fff;border:1px solid #e4e7ec;border-radius:18px;padding:18px;margin-top:14px}
+.st{display:flex;gap:12px;align-items:center}
+.dot{width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-size:24px}
+.ready .dot{background:#17b26a}.attention .dot{background:#f79009}.unknown .dot{background:#98a2b3}
+.st b{font-size:20px;display:block;line-height:1.25}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:14px 0 0;font-size:16px}dt{color:#667085}dd{margin:0}
+.mut{color:#667085;font-size:14px}
+a.alt{display:block;text-align:center;margin-top:12px;padding:12px;border:1px solid #e4e7ec;border-radius:12px;color:#16181d;text-decoration:none;font-weight:600;background:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sos">
+    <h1>เจอคนหมดสติ ไม่หายใจ</h1>
+    <ol>
+      <li>โทร <b>1669</b> และตะโกนขอความช่วยเหลือ</li>
+      <li>นำเครื่อง AED มา <b>เปิดฝา / กดปุ่มเปิด</b> แล้วทำตามเสียงแนะนำ</li>
+      <li>กดหน้าอกแรงและเร็ว ไม่หยุด จนกว่าเครื่องบอกให้หยุด</li>
+    </ol>
+    <a class="call" href="tel:1669">📞 โทร 1669</a>
+  </div>
+
+  <div class="card" id="status"><p class="mut">กำลังตรวจสถานะเครื่อง…</p></div>
+
+  <a class="alt" href="tel:0822809999">แจ้งปัญหาเครื่อง / สอบถาม · 082-280-9999</a>
+  <p class="mut" style="text-align:center">ดูแลโดย JIA TRAINER CENTER · บริษัท โรจน์รุ่งธุรกิจ จำกัด</p>
+</div>
+<script>
+{
+const SB='https://tpoiyykbgsgnrdwzgzvn.supabase.co', KEY='sb_publishable_1kXSE788PB9XqH_2vU3pqg_6xtqI1Mf';
+const tok=(location.pathname.match(/\/r\/([0-9a-f]{12,})/)||[])[1]||new URLSearchParams(location.search).get('t');
+const el=document.getElementById('status');
+const fmt=d=>new Date(d).toLocaleString('th-TH',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Bangkok'});
+const ym=s=>s?new Date(s+'-01T00:00:00').toLocaleDateString('th-TH',{month:'long',year:'numeric'}):'–';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function go(){
+  if(!tok){el.innerHTML='<p class="mut">ไม่พบรหัสเครื่องในลิงก์</p>';return}
+  try{
+    const r=await fetch(`${SB}/rest/v1/rpc/aed_public_status`,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:tok})});
+    const d=await r.json();
+    if(!r.ok||!d){el.innerHTML='<p class="mut">ไม่พบข้อมูลเครื่องนี้ — ในเหตุฉุกเฉินใช้เครื่องได้ตามปกติ</p>';return}
+    const T={ready:['✓','เครื่องพร้อมใช้งาน','ตรวจตัวเองผ่านภายใน 7 วันที่ผ่านมา'],
+      attention:['!','เครื่องต้องได้รับการตรวจเช็ก','ทีมงานได้รับแจ้งแล้ว · ในเหตุฉุกเฉินยังใช้เครื่องได้ ให้ทำตามเสียงแนะนำ'],
+      unknown:['?','ยังไม่ได้รับผลตรวจล่าสุด','ในเหตุฉุกเฉินใช้เครื่องได้ตามปกติ · หากสงสัยโทรแจ้งทีมงาน']}[d.status]||['?','–',''];
+    el.className='card '+d.status;
+    el.innerHTML=`<div class="st"><div class="dot">${T[0]}</div><div><b>${T[1]}</b><span class="mut">${T[2]}</span></div></div>
+      <dl>${d.location?`<dt>จุดติดตั้ง</dt><dd>${esc(d.location)}</dd>`:''}
+      <dt>เครื่อง</dt><dd>Yuwell ${esc(d.model)} · …${esc(d.sn_tail)}</dd>
+      <dt>ตรวจตัวเองล่าสุด</dt><dd>${d.last_selftest_at?fmt(d.last_selftest_at)+(d.last_selftest_ok?' · ผ่าน':''):'–'}</dd>
+      <dt>แผ่นแปะหมดอายุ</dt><dd>${ym(d.electrode_expiry)}</dd>
+      <dt>แบตหมดอายุ</dt><dd>${ym(d.battery_expiry)}</dd></dl>
+      <p class="mut" style="margin:12px 0 0">เครื่องตรวจตัวเองอัตโนมัติทุกสัปดาห์และส่งผลผ่าน 4G ถึงทีมงาน</p>`;
+  }catch(e){el.innerHTML='<p class="mut">โหลดสถานะไม่ได้ — ในเหตุฉุกเฉินใช้เครื่องได้ตามปกติ</p>'}
+}
+go();
+}
+</script>
+</body>
+</html>
