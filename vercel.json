@@ -16,6 +16,10 @@
       "destination": "/ready.html"
     },
     {
+      "source": "/c/:token",
+      "destination": "/customer.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -53,6 +57,19 @@
     },
     {
       "source": "/r/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/c/(.*)",
       "headers": [
         {
           "key": "X-Robots-Tag",

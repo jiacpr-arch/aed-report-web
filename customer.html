@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>สถานะเครื่อง AED ของคุณ · JIA TRAINER CENTER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;min-width:0}
+body{margin:0;font:16px/1.55 "IBM Plex Sans Thai",system-ui,sans-serif;background:#f4f5f7;color:#16181d}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.logo{width:36px;height:36px;border-radius:10px;background:#c8102e;color:#fff;display:grid;place-items:center;font-size:18px}
+h1{font-size:24px;margin:10px 0 2px;line-height:1.25}
+.mut{color:#667085;font-size:14px}
+.sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.sum div{background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:12px 14px}
+.sum b{display:block;font-size:28px;line-height:1.1}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.dev{background:#fff;border:1px solid #e4e7ec;border-radius:16px;padding:14px;position:relative;overflow:hidden}
+.dev::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
+.ready::before{background:#17b26a}.attention::before{background:#f79009}.unknown::before{background:#98a2b3}
+.dev h3{margin:0;font-size:16px}
+.tag{display:inline-block;font-size:13px;padding:2px 9px;border-radius:99px;margin-top:6px}
+.ready .tag{background:#ecfdf3;color:#067647}.attention .tag{background:#fffaeb;color:#b54708}.unknown .tag{background:#f2f4f7;color:#475467}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:10px 0 0;font-size:14px}dt{color:#667085}dd{margin:0}
+a{color:#1d4ed8}
+.foot{margin-top:24px;background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:14px;font-size:14px}
+@media(max-width:560px){.sum b{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="logo">♥</div><b>JIA TRAINER CENTER</b></header>
+  <div id="out"><p class="mut">กำลังโหลด…</p></div>
+  <div class="foot">เครื่อง AED ตรวจตัวเองอัตโนมัติทุกสัปดาห์และส่งผลผ่าน 4G มาให้ทีมงาน หากพบความผิดปกติ ทีมงานจะติดต่อกลับ · สอบถาม 082-280-9999 · <b>เหตุฉุกเฉินโทร 1669 และใช้เครื่องได้ทันที</b></div>
+</div>
+<script>
+{
+const SB='https://tpoiyykbgsgnrdwzgzvn.supabase.co', KEY='sb_publishable_1kXSE788PB9XqH_2vU3pqg_6xtqI1Mf';
+const tok=(location.pathname.match(/\/c\/([0-9a-f]{20,})/)||[])[1]||new URLSearchParams(location.search).get('t');
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fd=d=>d?new Date(d.length>10?d:d+'T00:00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Bangkok'}):'–';
+const L={ready:'พร้อมใช้งาน',attention:'ทีมงานกำลังตรวจเช็ก',unknown:'รอผลตรวจรอบถัดไป'};
+async function go(){
+  if(!tok){$('out').innerHTML='<p class="mut">ลิงก์ไม่ถูกต้อง</p>';return}
+  try{
+    const r=await fetch(`${SB}/rest/v1/rpc/aed_public_customer`,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:tok})});
+    const d=await r.json();
+    if(!r.ok||!d){$('out').innerHTML='<p class="mut">ไม่พบข้อมูล หรือลิงก์หมดอายุ — ติดต่อ 082-280-9999</p>';return}
+    const ds=d.devices, c={ready:0,attention:0,unknown:0}; ds.forEach(x=>c[x.status]++);
+    const end=ds.map(x=>x.contract_end).filter(Boolean).sort()[0];
+    $('out').innerHTML=`<h1>เครื่อง AED ของ ${esc(d.customer)}</h1><p class="mut">อัปเดต ${new Date().toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'})}${end?' · สัญญาถึง '+fd(end):''}</p>
+      <div class="sum"><div><b>${ds.length}</b>เครื่องทั้งหมด</div><div><b style="color:#067647">${c.ready}</b>พร้อมใช้งาน</div><div><b style="color:#b54708">${c.attention+c.unknown}</b>รอตรวจ / กำลังดูแล</div></div>
+      <div class="grid">${ds.map(x=>`<div class="dev ${x.status}"><h3>${esc(x.label||'AED')}</h3><div class="mut">${esc(x.location||'')}</div><span class="tag">${L[x.status]}</span>
+        <dl><dt>ตรวจตัวเองล่าสุด</dt><dd>${x.last_selftest_at?fd(x.last_selftest_at):'–'}</dd><dt>แผ่นแปะหมดอายุ</dt><dd>${fd(x.electrode_expiry)}</dd><dt>แบตหมดอายุ</dt><dd>${fd(x.battery_expiry)}</dd><dt>เครื่อง</dt><dd>Yuwell ${esc(x.model||'')} · …${esc(x.sn_tail)}</dd></dl>
+        ${x.qr?`<p style="margin:8px 0 0;font-size:14px"><a href="/r/${esc(x.qr)}">หน้า QR ของเครื่องนี้</a></p>`:''}</div>`).join('')||'<p class="mut">ยังไม่มีเครื่องในระบบ</p>'}</div>`;
+  }catch(e){$('out').innerHTML='<p class="mut">โหลดไม่ได้ ลองใหม่อีกครั้ง</p>'}
+}
+go();
+}
+</script>
+</body>
+</html>

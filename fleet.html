@@ -95,6 +95,14 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
 .rep .ft{margin-top:18px;font-size:12px;color:#555;border-top:1px solid var(--line);padding-top:10px}
 @media print{header,nav,.noprint,#toast,.ov,.drawer{display:none!important}body{background:#fff}main{padding:0}.wrap{max-width:none;padding:0}.rep{border:0;padding:0}}
 @media(max-width:700px){.chips{grid-template-columns:repeat(3,minmax(0,1fr))}.chip b{font-size:22px}.form{grid-template-columns:1fr}#q{max-width:none;order:9;flex-basis:100%}.rep .sum{grid-template-columns:1fr 1fr}.rep{padding:14px}.kv{grid-template-columns:110px 1fr}}
+#tvbar{display:none}
+body.tv header{display:none}
+body.tv #tvbar{display:flex;gap:24px;align-items:center;justify-content:space-between;background:#16181d;color:#fff;padding:14px 28px;font-size:22px}
+body.tv .wrap{max-width:none;padding:0 28px}
+body.tv .chip b{font-size:56px}body.tv .chip span{font-size:20px}
+body.tv .panel h2{font-size:26px}body.tv .todo .t{font-size:20px}
+body.tv .grid{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}body.tv .dev h3{font-size:20px}
+body.tv .actions,body.tv #sort,body.tv button[onclick="exportCsv()"]{display:none}
 @media(prefers-reduced-motion:reduce){.drawer{transition:none}}
 </style>
 </head>
@@ -136,6 +144,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
   </nav>
 </header>
 
+<div id="tvbar"><b>♥ AED Fleet — JIA TRAINER CENTER</b><span id="tvclock"></span><a href="#" onclick="document.body.classList.remove('tv');tab('home');return false" style="color:#fff">ออกจากโหมดจอ</a></div>
 <main><div class="wrap">
   <section id="t-home">
     <div id="health"></div>
@@ -176,6 +185,11 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
       <h2>แผนเปลี่ยนแผ่นแปะและแบต (12 เดือนข้างหน้า)</h2>
       <p class="mut" style="margin-top:0">รวมเครื่องในคลังด้วย — ต้องเปลี่ยนก่อนปล่อยเช่า · ใช้วางแผนสั่งของล่วงหน้า</p>
       <div id="plan"></div>
+    </div>
+    <div class="panel noprint" style="margin-top:16px">
+      <h2>การใช้เครื่องกองเช่ารายวัน (90 วันล่าสุด)</h2>
+      <p class="mut" style="margin-top:0">จาก class.jiacpr.com · จำนวนวันที่ออกเช่าใน 90 วัน · เครื่องที่มีงาน "ออกเช่า" ค้างนานผิดปกติ อาจลืมกดรับคืน หรือเป็นเช่ารายยาวที่ควรย้ายไปบันทึกแบบสัญญา</p>
+      <div id="util" class="mut">กำลังโหลด…</div>
     </div>
   </section>
 
@@ -224,6 +238,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px;borde
     <div class="panel">
       <h2>เครื่องส่งข้อมูลเมื่อไหร่</h2>
       <ul class="steps"><li>ทุกวันจันทร์ 08:00 เครื่องตรวจตัวเองแล้วส่งผล</li><li>เมื่อมีคนเปิดเครื่อง ระบบจะรู้หลังปิดเครื่องแล้วประมาณ 3 นาที</li><li>เมื่อถอดแบตแล้วใส่กลับ (ใช้ทดสอบได้ทันที)</li></ul>
+      <p class="mut"><b>โหมดจอใหญ่:</b> เปิด <a href="#monitor" onclick="setTimeout(route,0)">aed-report-web.vercel.app/fleet#monitor</a> ค้างไว้บนทีวีที่ออฟฟิศ รีเฟรชเองทุก 1 นาที (ติ๊ก "จำไว้ในเครื่องนี้" ตอนล็อกอิน)</p>
       <p class="mut">ทุกวัน 09:00 ระบบดึงสถานะแบตและแผ่นแปะจาก Primedic ให้อีกทาง · วันจันทร์ 10:30 ถ้าเครื่องไหนไม่ส่งผล self-test จะมีแจ้งเตือน 🕗</p>
       <p class="mut"><b>LINE ทันที:</b> 🚨 เปิดเครื่อง · 🚩 ย้ายเครื่อง · ⚠️ ตรวจไม่ผ่าน/ผิดปกติ · ⏰ เลยกำหนดคืน · 🕗 ไม่ส่ง self-test วันจันทร์ — <b>รวมในสรุปเช้า 08:05:</b> ใกล้หมดอายุ · แบตต่ำ · เครื่องเงียบ · กลับมาออนไลน์ — <b>ไม่แจ้ง LINE:</b> เปิดเครื่องในวันส่งหรือวันรับคืน และเครื่องที่อยู่ในคลัง (ยังดูได้ในประวัติแจ้งเตือน)</p>
       <p class="mut">แจ้งเตือนส่งเข้า LINE OA @273fzpzs (บอท jiaaed.com) เฉพาะช่วง 08:00–20:00 · นอกเวลานั้นจะส่งตอน 08:00 ให้ดูในหน้านี้แทน · แจ้งเตือนทุกแบบส่งเข้า LINE ด้วย · ขั้นตอนรับมือแต่ละแจ้งเตือนอยู่ในเอกสาร "ขั้นตอนรับมือแจ้งเตือน AED (สำหรับทีม)"</p>
@@ -301,7 +316,7 @@ const SL={r:'ต้องดูด่วน',y:'ควรดู',g:'ปกติ
 
 async function load(){
   const [f,h]=await Promise.all([rpc('aed_web_fleet',{}),rpc('aed_web_health',{}).catch(()=>null)]);
-  FLEET=f; HEALTH=h;
+  FLEET=f.filter(d=>!/S\/N ผิด/.test(d.label||'')); HEALTH=h;
   FLEET.forEach(d=>d._a=assess(d));
   $('upd').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
   render();
@@ -355,7 +370,11 @@ window.tab=t=>{
   try{history.replaceState(null,'',t==='home'?location.pathname:'#'+t)}catch(e){}
   if(t==='map') drawMap(); if(t==='alerts') initAlerts(); if(t==='report') initReport();
 };
-function route(){const h=location.hash.slice(1);if(['map','alerts','report','usb','bulk','help'].includes(h))tab(h)}
+let tvTimer=null;
+function route(){const h=location.hash.slice(1);
+  if(h==='monitor'){document.body.classList.add('tv');tab('home');try{history.replaceState(null,'','#monitor')}catch(e){}
+    if(!tvTimer)tvTimer=setInterval(()=>load().catch(()=>{}),60000);
+    const c=$('tvclock');const tick=()=>c.textContent=new Date().toLocaleString('th-TH',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});tick();setInterval(tick,30000);return}if(['map','alerts','report','usb','bulk','help'].includes(h))tab(h)}
 
 function drawMap(){
   if(!map){map=L.map('map').setView([13.75,100.55],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);layer=L.layerGroup().addTo(map)}
@@ -396,6 +415,7 @@ window.openDev=async sn=>{
       ${d.customer_phone?`<a class="btnlink" style="flex:1" href="tel:${esc(tel(d.customer_phone))}">📞 โทร ${esc(d.customer_phone)}</a>`:''}
       <button style="flex:1" onclick="openEdit('${esc(d.sn)}')">✏️ แก้ไขข้อมูล</button>
       <button style="flex:1" onclick="sticker('${esc(d.sn)}')">🏷 สติกเกอร์ QR</button>
+      ${d.customer_name?`<button style="flex:1" onclick="custLink('${esc(d.sn)}')">🔗 ลิงก์ให้ลูกค้า</button>`:''}
     </div>
     <dl class="kv">
       <dt>ลูกค้า</dt><dd>${esc(d.customer_name||'–')}</dd>
@@ -503,8 +523,24 @@ window.sticker=sn=>{
   <script>new QRCode(document.getElementById('q'),{text:${JSON.stringify(url)},width:180,height:180,correctLevel:QRCode.CorrectLevel.M});<\/script></body></html>`);
   w.document.close();
 };
+window.custLink=async sn=>{
+  const d=FLEET.find(x=>x.sn===sn);
+  try{const t=await rpc('aed_web_customer_link',{p_customer:d.customer_name});
+    const url='https://aed-report-web.vercel.app/c/'+t;
+    try{await navigator.clipboard.writeText(url);toast('คัดลอกลิงก์แล้ว — ส่งให้ลูกค้าทาง LINE/อีเมลได้เลย')}catch(e){prompt('ลิงก์สำหรับลูกค้า',url)}
+  }catch(e){toast(e.message)}
+};
+async function renderUtil(){
+  try{const u=await rpc('aed_web_utilization',{});const today=new Date();
+    $('util').innerHTML=`<div style="overflow-x:auto"><table><tr><th>เครื่อง</th><th>S/N</th><th>ออกเช่า (วัน/90)</th><th>จำนวนงาน</th><th>ล่าสุด</th><th>สถานะ</th></tr>${u.map(x=>{
+      const open=x.open_since?Math.floor((today-new Date(x.open_since+'T00:00:00'))/864e5):null;
+      const pct=Math.round(x.days_90/90*100);
+      return `<tr><td>${esc(x.name)}</td><td class="small">${esc(x.sn||'–')}</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:60px;height:8px;background:var(--nbg);border-radius:4px"><div style="width:${pct}%;height:100%;background:${pct>60?'#17b26a':pct>20?'#f79009':'#d0d5dd'};border-radius:4px"></div></div>${x.days_90}</div></td>
+      <td>${x.rentals_90}</td><td>${x.last_out?fdate(x.last_out):'–'}</td><td>${open!==null&&open>45?`<span class="tag r">ค้าง "ออกเช่า" ${open} วัน</span>`:x.inv_status==='maintenance'?'<span class="tag y">ซ่อม</span>':x.days_90===0?'<span class="tag">ว่าง</span>':''}</td></tr>`}).join('')}</table></div>`;
+  }catch(e){$('util').textContent=e.message}
+}
 function initReport(){
-  renderPlan();
+  renderPlan(); renderUtil();
   const cs=[...new Set(FLEET.map(d=>d.customer_name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
   const cur=$('rc').value;
   $('rc').innerHTML=cs.map(c=>`<option ${c===cur?'selected':''}>${esc(c)}</option>`).join('')+`<option value="" ${cs.length?'':'selected'}>(เครื่องที่ยังไม่ระบุลูกค้า)</option>`;
@@ -540,6 +576,8 @@ window.exportCsv=()=>{
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='aed-fleet-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 };
 window.render=render;
+window.route=route;
+window.addEventListener('hashchange',()=>{if(location.hash==='#monitor'&&PW)route()});
 
 // ---------- USB export reader (runs in the browser only) ----------
 const dur=s=>s==null?'–':s<60?Math.round(s)+' วิ':Math.floor(s/60)+' นาที '+Math.round(s%60)+' วิ';
