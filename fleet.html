@@ -38,6 +38,13 @@ label{font-size:13px;color:var(--mut);display:block;margin-bottom:3px}
 .alert{border-left:3px solid var(--b);padding:6px 10px;margin:6px 0;background:#f9fafb;white-space:pre-wrap;font-size:13px}
 #login{max-width:360px;margin:12vh auto;background:#fff;padding:24px;border-radius:14px;border:1px solid var(--line)}
 .err{color:var(--r);font-size:14px;margin-top:8px}.ok{color:var(--g)}
+.rep{background:#fff;border:1px solid var(--line);border-radius:12px;padding:28px;max-width:900px;margin:0 auto;color:#111}
+.rep h2{margin:0 0 4px;font-size:22px}.rep .hd{display:flex;justify-content:space-between;gap:12px;border-bottom:3px solid #b91c1c;padding-bottom:12px;margin-bottom:16px;flex-wrap:wrap}
+.rep .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.rep .sum div{border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.rep .sum b{display:block;font-size:22px}.rep table{border-radius:0;font-size:13px}.rep th,.rep td{font-size:13px;padding:7px}
+.rep .ft{margin-top:18px;font-size:12px;color:#555;border-top:1px solid var(--line);padding-top:10px}
+@media print{header,.tabs,.cards,.noprint,#toast,.modal{display:none!important}body{background:#fff}main{padding:0;max-width:none}.rep{border:0;padding:0;max-width:none}#t-report{display:block!important}}
+@media(max-width:640px){.rep .sum{grid-template-columns:1fr 1fr}.rep{padding:14px}}
 #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;display:none;z-index:3000}
 </style>
 </head>
@@ -66,6 +73,7 @@ label{font-size:13px;color:var(--mut);display:block;margin-bottom:3px}
     <button data-t="map" onclick="tab('map')">🗺️ แผนที่</button>
     <button data-t="alerts" onclick="tab('alerts')">🔔 ประวัติแจ้งเตือน</button>
     <button data-t="bulk" onclick="tab('bulk')">📥 เพิ่มหลายเครื่อง</button>
+    <button data-t="report" onclick="tab('report')">📄 รายงานลูกค้า</button>
   </div>
 
   <section id="t-list">
@@ -96,6 +104,16 @@ label{font-size:13px;color:var(--mut);display:block;margin-bottom:3px}
       <div id="bprev" style="margin-top:10px"></div>
       <p class="mut">เครื่องใหม่ที่บันทึก ระบบจะลงทะเบียนรับข้อมูลกับ Primedic ให้อัตโนมัติ ข้อมูลแรกจะเข้ามาตอน self-test (ทุกวันจันทร์ 08:00) หรือถอดแบตใส่ใหม่</p>
     </div>
+  </section>
+  <section id="t-report" style="display:none">
+    <div class="bar noprint">
+      <select id="rc" style="max-width:340px"></select>
+      <input id="rm" type="month" style="max-width:180px">
+      <button class="pri" onclick="makeReport()">สร้างรายงาน</button>
+      <button onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
+    </div>
+    <p class="mut noprint">เลือกลูกค้าและเดือน แล้วกดพิมพ์ → เลือก "Save as PDF" เพื่อส่งให้ลูกค้าทางอีเมลหรือ LINE · ลูกค้าต้องมีชื่อในข้อมูลเครื่องก่อน</p>
+    <div id="rep"></div>
   </section>
 </main>
 </div>
@@ -177,8 +195,8 @@ function render(){
     <td class="mut">${ago(d.last_seen_at)}</td></tr>`).join('')||`<tr><td colspan="6" class="mut">ไม่พบเครื่อง</td></tr>`;
 }
 function tab(t){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  ['list','map','alerts','bulk'].forEach(x=>$('t-'+x).style.display=x===t?'':'none');
-  if(t==='map') drawMap(); if(t==='alerts') loadAlerts();}
+  ['list','map','alerts','bulk','report'].forEach(x=>$('t-'+x).style.display=x===t?'':'none');
+  if(t==='map') drawMap(); if(t==='alerts') loadAlerts(); if(t==='report') initReport();}
 
 function drawMap(){
   if(!map){map=L.map('map').setView([13.75,100.55],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);layer=L.layerGroup().addTo(map)}
@@ -274,6 +292,36 @@ function exportCsv(){
   const rows=FLEET.map(d=>[s[d._a.s],d._a.why.join('; '),d.sn,d.label,d.customer_name,d.install_location,d.customer_contact,d.customer_phone,d.battery_power,d.battery_expiry,d.electrode_expiry,fmt(d.last_seen_at),fmt(d.last_selftest_at),d.subscribed?'แล้ว':'ยัง',d.lat,d.lng]);
   const csv='﻿'+[h,...rows].map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='aed-fleet-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+function initReport(){
+  const cs=[...new Set(FLEET.map(d=>d.customer_name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
+  const cur=$('rc').value;
+  $('rc').innerHTML=(cs.length?cs.map(c=>`<option ${c===cur?'selected':''}>${esc(c)}</option>`).join(''):'<option value="">(ยังไม่มีชื่อลูกค้าในข้อมูลเครื่อง)</option>');
+  if(!$('rm').value){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-(new Date().getDate()<8?1:0));$('rm').value=d.toISOString().slice(0,7)}
+}
+async function makeReport(){
+  const c=$('rc').value, m=$('rm').value; if(!m) return toast('เลือกเดือนก่อน');
+  $('rep').innerHTML='<p class="mut">กำลังสร้าง…</p>';
+  let r; try{r=await rpc('aed_web_report',{p_customer:c,p_month:m+'-01'})}catch(e){$('rep').innerHTML='';return toast(e.message)}
+  const ds=r.devices, mn=new Date(m+'-01T00:00:00').toLocaleDateString('th-TH',{month:'long',year:'numeric'});
+  const tests=ds.reduce((a,d)=>a+d.tests,0), ok=ds.reduce((a,d)=>a+d.tests_ok,0), pon=ds.reduce((a,d)=>a+d.power_ons,0);
+  const ready=ds.filter(d=>{const x=assess(Object.assign({},FLEET.find(f=>f.sn===d.sn)||d));return x.s==='g'||x.s==='y'}).length;
+  const st={1:'ผ่าน',2:'ไม่ผ่าน'}, stt={1:'ใส่แบต',2:'รายวัน',3:'รายสัปดาห์',4:'รายเดือน',5:'ราย 6 เดือน'};
+  const due=[]; ds.forEach(d=>{[['แบตเตอรี่',d.battery_expiry],['แผ่นแปะอิเล็กโทรด',d.electrode_expiry]].forEach(([k,v])=>{const n=days(v);if(n!==null&&n<=90)due.push(`${esc(d.label||d.sn)} — ${k} หมดอายุ ${fdate(v)} ${n<0?'(หมดอายุแล้ว)':'(อีก '+n+' วัน)'}`)})});
+  $('rep').innerHTML=`<div class="rep">
+   <div class="hd"><div><h2>รายงานความพร้อมใช้งานเครื่อง AED</h2><div>ประจำเดือน <b>${mn}</b></div><div>ลูกค้า: <b>${esc(c||'-')}</b></div></div>
+     <div style="text-align:right"><b>JIA TRAINER CENTER</b><br><span class="mut">บริษัท โรจน์รุ่งธุรกิจ จำกัด</span><br><span class="mut">ออกรายงาน ${new Date().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}</span></div></div>
+   <div class="sum"><div><b>${ds.length}</b>เครื่อง AED</div><div><b>${ok}/${tests}</b>Self-test ผ่าน</div><div><b>${pon}</b>ครั้งที่มีการเปิดเครื่อง</div><div><b>${ready}/${ds.length}</b>พร้อมใช้ ณ วันออกรายงาน</div></div>
+   <table><tr><th>เครื่อง / จุดติดตั้ง</th><th>S/N</th><th>Self-test เดือนนี้</th><th>ตรวจล่าสุด</th><th>แบต</th><th>แบตหมดอายุ</th><th>แผ่นแปะหมดอายุ</th></tr>
+   ${ds.map(d=>`<tr><td><b>${esc(d.label||'-')}</b><br><span class="mut">${esc(d.install_location||'')}</span></td><td>${esc(d.sn)}</td>
+     <td>${d.tests?`${d.tests_ok}/${d.tests} ผ่าน`:'ไม่มีข้อมูล'}${d.tests_fail?`<br><b style="color:var(--r)">ไม่ผ่าน ${d.tests_fail} ครั้ง</b>`:''}</td>
+     <td>${fmt(d.last_selftest_at)}<br><span class="mut">${st[d.last_selftest_result]||''}</span></td><td>${d.battery_power!=null?d.battery_power+'%':'–'}</td>
+     <td>${fdate(d.battery_expiry)}</td><td>${fdate(d.electrode_expiry)}</td></tr>`).join('')||'<tr><td colspan="7">ไม่พบเครื่องของลูกค้านี้</td></tr>'}</table>
+   ${due.length?`<h3 style="font-size:15px;margin:16px 0 6px">อุปกรณ์ที่ต้องเปลี่ยนภายใน 90 วัน</h3><ul style="margin:0;padding-left:20px">${due.map(x=>`<li>${x}</li>`).join('')}</ul><p class="mut">ทีมงานจะติดต่อนัดเปลี่ยนให้ก่อนวันหมดอายุ</p>`:'<p>✅ ไม่มีอุปกรณ์ที่ต้องเปลี่ยนภายใน 90 วัน</p>'}
+   ${pon?`<p><b>มีการเปิดเครื่อง ${pon} ครั้งในเดือนนี้</b> — หากเป็นการใช้งานกับผู้ป่วยจริง ทีมงานจะเปลี่ยนแผ่นแปะชุดใหม่และตรวจเครื่องให้</p>`:''}
+   <h3 style="font-size:15px;margin:16px 0 6px">บันทึกการตรวจเครื่องอัตโนมัติ</h3>
+   <table><tr><th>วันเวลา</th><th>เครื่อง</th><th>รายการ</th><th>ผล</th><th>แบต</th></tr>${ds.flatMap(d=>d.events.map(e=>`<tr><td>${fmt(e.at)}</td><td>${esc(d.label||d.sn)}</td><td>${e.mode===2?'เปิดเครื่อง':'Self-test '+(stt[e.type]||'')}</td><td>${e.mode===2?'–':(st[e.result]||'–')}</td><td>${e.batt??'–'}%</td></tr>`)).join('')||'<tr><td colspan="5">ไม่มีข้อมูลในเดือนนี้</td></tr>'}</table>
+   <div class="ft">เครื่อง AED ตรวจตัวเองอัตโนมัติทุกสัปดาห์ และส่งผลผ่านเครือข่าย 4G มายังระบบเฝ้าระวังของ JIA TRAINER CENTER หากพบความผิดปกติ ทีมงานได้รับแจ้งเตือนทันทีและจะติดต่อกลับ · ข้อมูลในรายงานนี้มาจากผลที่เครื่องส่งมา · สอบถาม โทร 082-280-9999</div></div>`;
 }
 setInterval(()=>{if(PW&&document.visibilityState==='visible')load().catch(()=>{})},5*60*1000);
 (function(){const p=read('aedpw');if(p){$('pw').value=p;login()}})();
