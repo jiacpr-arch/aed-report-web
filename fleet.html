@@ -103,6 +103,13 @@ body.tv .chip b{font-size:56px}body.tv .chip span{font-size:20px}
 body.tv .panel h2{font-size:26px}body.tv .todo .t{font-size:20px}
 body.tv .grid{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}body.tv .dev h3{font-size:20px}
 body.tv .actions,body.tv #sort,body.tv button[onclick="exportCsv()"]{display:none}
+body.r-tech .ns{display:none!important}body:not(.r-admin) .na{display:none!important}
+#login .step{display:none}#login .step.on{display:block}
+.linkbtn{background:none;border:0;color:var(--b);padding:0;min-height:0;text-decoration:underline;font-weight:400}
+#who{font-size:13px;color:var(--mut);white-space:nowrap}
+.role{display:inline-block;font-size:12px;border-radius:99px;padding:1px 8px;background:var(--nbg);color:var(--ink)}
+.role.admin{background:#fde8eb;color:var(--brand2)}.role.staff{background:#e0eaff;color:var(--b)}.role.tech{background:var(--gbg);color:var(--g)}.role.pending{background:var(--ybg);color:var(--y)}
+table.ut{width:100%;border-collapse:collapse}table.ut td,table.ut th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}
 @media(prefers-reduced-motion:reduce){.drawer{transition:none}}
 </style>
 </head>
@@ -112,13 +119,40 @@ body.tv .actions,body.tv #sort,body.tv button[onclick="exportCsv()"]{display:non
   <div class="box">
     <div class="logo"><i>♥</i> AED Fleet</div>
     <p class="mut">ระบบติดตามเครื่อง AED เช่า · JIA TRAINER CENTER</p>
-    <form onsubmit="event.preventDefault();login()">
-      <label for="pw">รหัสผ่าน</label>
-      <input id="pw" type="password" autocomplete="current-password">
-      <label style="display:flex;gap:8px;align-items:center;margin:12px 0 0;color:var(--ink)"><input id="rem" type="checkbox" style="width:20px;min-height:20px" checked> จำไว้ในเครื่องนี้</label>
-      <button class="pri" style="width:100%;margin-top:16px">เข้าสู่ระบบ</button>
-    </form>
+    <div class="step on" id="s-email">
+      <form onsubmit="event.preventDefault();sendCode()">
+        <label for="em">อีเมล</label>
+        <input id="em" type="email" autocomplete="email" inputmode="email" placeholder="name@example.com">
+        <button class="pri" style="width:100%;margin-top:16px" id="bsend">ส่งลิงก์เข้าอีเมล</button>
+      </form>
+      <p class="mut small" style="margin:12px 0 0">ครั้งแรกที่เข้า ระบบจะสร้างบัญชีให้และรอแอดมินอนุมัติ</p>
+    </div>
+    <div class="step" id="s-code">
+      <form onsubmit="event.preventDefault();verifyCode()">
+        <p style="margin:0 0 12px">📧 ส่งอีเมลไปที่ <b id="em2"></b> แล้ว<br><span class="mut small">เปิดอีเมล "Magic Link" แล้วกด <b>Log In</b> ระบบจะเข้าหน้านี้ให้เอง (ถ้าไม่เห็น ดูในโฟลเดอร์สแปม) · ถ้าในอีเมลมีตัวเลข กรอกด้านล่างแทนได้</span></p>
+        <label for="otp">รหัสตัวเลข (ถ้ามี)</label>
+        <input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="ตัวเลขในอีเมล">
+        <button class="pri" style="width:100%;margin-top:16px">เข้าสู่ระบบ</button>
+      </form>
+      <p class="small" style="margin:12px 0 0"><button class="linkbtn" onclick="lstep('email')">← เปลี่ยนอีเมล / ส่งใหม่</button></p>
+    </div>
+    <div class="step" id="s-wait">
+      <p style="margin:8px 0">⏳ <b>รอแอดมินอนุมัติ</b></p>
+      <p class="mut small" style="margin:0">บัญชี <b id="em3"></b> ลงทะเบียนแล้ว แจ้งพี่เจี่ยหรือแอดมินให้กดอนุมัติในแท็บ "ผู้ใช้" แล้วกดปุ่มด้านล่าง</p>
+      <button class="pri" style="width:100%;margin-top:16px" onclick="afterAuth()">ตรวจสอบอีกครั้ง</button>
+      <button style="width:100%;margin-top:8px" onclick="logout()">ออกจากระบบ</button>
+    </div>
+    <div class="step" id="s-pw">
+      <form onsubmit="event.preventDefault();login()">
+        <label for="pw">รหัสรวม (ชั่วคราว)</label>
+        <input id="pw" type="password" autocomplete="current-password">
+        <label style="display:flex;gap:8px;align-items:center;margin:12px 0 0;color:var(--ink)"><input id="rem" type="checkbox" style="width:20px;min-height:20px" checked> จำไว้ในเครื่องนี้</label>
+        <button class="pri" style="width:100%;margin-top:16px">เข้าสู่ระบบ</button>
+      </form>
+      <p class="small" style="margin:12px 0 0"><button class="linkbtn" onclick="lstep('email')">← เข้าด้วยอีเมล</button></p>
+    </div>
     <div id="lerr" class="err"></div>
+    <p class="small" style="margin:16px 0 0" id="pwlink"><button class="linkbtn" onclick="lstep('pw')">ใช้รหัสรวม (ชั่วคราว)</button></p>
   </div>
 </div>
 
@@ -129,8 +163,9 @@ body.tv .actions,body.tv #sort,body.tv button[onclick="exportCsv()"]{display:non
     <span class="mut small" id="upd"></span>
     <div class="sp"></div>
     <input id="q" type="search" placeholder="🔍 ค้นหา ชื่อเครื่อง ลูกค้า S/N…" oninput="render()">
-    <button class="pri" onclick="openEdit()">＋ เพิ่มเครื่อง</button>
+    <button class="pri ns" onclick="openEdit()">＋ เพิ่มเครื่อง</button>
     <button class="ghost" onclick="load()" title="รีเฟรช">↻</button>
+    <span id="who"></span>
     <button class="ghost" onclick="logout()">ออก</button>
   </div>
   <nav>
@@ -139,7 +174,8 @@ body.tv .actions,body.tv #sort,body.tv button[onclick="exportCsv()"]{display:non
     <button data-t="alerts" onclick="tab('alerts')">ประวัติแจ้งเตือน</button>
     <button data-t="report" onclick="tab('report')">รายงานลูกค้า</button>
     <button data-t="usb" onclick="tab('usb')">ไฟล์ USB</button>
-    <button data-t="bulk" onclick="tab('bulk')">เพิ่มหลายเครื่อง</button>
+    <button data-t="bulk" class="ns" onclick="tab('bulk')">เพิ่มหลายเครื่อง</button>
+    <button data-t="users" class="na" onclick="tab('users')">ผู้ใช้</button>
     <button data-t="help" onclick="tab('help')">วิธีใช้</button>
   </nav>
 </header>
@@ -226,6 +262,23 @@ body.tv .actions,body.tv #sort,body.tv button[onclick="exportCsv()"]{display:non
     </div>
   </section>
 
+  <section id="t-users" style="display:none">
+    <div class="panel">
+      <h2>ผู้ใช้ระบบ</h2>
+      <p class="mut small" style="margin-top:0">คนใหม่เข้าด้วยอีเมลแล้วจะขึ้นเป็น "รออนุมัติ" — เลือกสิทธิ์ให้ได้เลย · <b>ช่าง</b> ดูได้ทุกอย่าง บันทึกการติดต่อ และอัปโหลดไฟล์ USB · <b>ทีมงาน</b> แก้ข้อมูลเครื่อง เพิ่มเครื่อง สร้างลิงก์ลูกค้า · <b>แอดมิน</b> จัดการผู้ใช้</p>
+      <div id="ulist" style="overflow-x:auto"></div>
+    </div>
+    <div class="panel">
+      <h2>รหัสรวม (ชั่วคราว)</h2>
+      <p class="mut small" style="margin-top:0">ใช้ได้ระหว่างที่ทีมยังสมัครไม่ครบ เข้าด้วยรหัสรวมจะได้สิทธิ์ทีมงาน และใน log จะขึ้นว่า "รหัสรวม" · เมื่อทุกคนมีบัญชีแล้วให้ปิด</p>
+      <div id="pwstate"></div>
+    </div>
+    <div class="panel">
+      <h2>ประวัติการแก้ไข</h2>
+      <div id="audit" style="overflow-x:auto"></div>
+    </div>
+  </section>
+
   <section id="t-help" style="display:none">
     <div class="panel">
       <h2>สีของเครื่องหมายถึงอะไร</h2>
@@ -253,6 +306,7 @@ body.tv .actions,body.tv #sort,body.tv button[onclick="exportCsv()"]{display:non
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <script>
 {
 const SB='https://tpoiyykbgsgnrdwzgzvn.supabase.co', KEY='sb_publishable_1kXSE788PB9XqH_2vU3pqg_6xtqI1Mf';
@@ -270,20 +324,93 @@ const ago=d=>{if(!d)return 'ยังไม่เคย';const h=(Date.now()-new
 const nm=d=>d.label||d.sn;
 const tel=p=>String(p||'').replace(/[^0-9+]/g,'');
 
+const sb=window.supabase.createClient(SB,KEY,{auth:{storageKey:'aedfleet-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});
+let ME=null; // {email,name,role} when signed in with an account
+const ROLE_TH={admin:'แอดมิน',staff:'ทีมงาน',tech:'ช่าง',pending:'รออนุมัติ',disabled:'ปิดใช้'};
+async function authHeader(){const {data}=await sb.auth.getSession();return data.session?{Authorization:'Bearer '+data.session.access_token}:{}}
 async function rpc(fn,args){
-  const r=await fetch(`${SB}/rest/v1/rpc/${fn}`,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_code:PW,...args})});
+  const r=await fetch(`${SB}/rest/v1/rpc/${fn}`,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json',...await authHeader()},body:JSON.stringify(fn==='aed_web_whoami'?{}:{p_code:PW,...args})});
   const j=await r.json().catch(()=>null);
-  if(!r.ok){const m=j?.message||('เชื่อมต่อไม่ได้ ('+r.status+')');if(m.includes('รหัสผ่าน'))logout();throw new Error(m)}
+  if(!r.ok){const m=j?.message||('เชื่อมต่อไม่ได้ ('+r.status+')');
+    if(m.includes('รหัสผ่าน')||m.includes('ยังไม่ได้รับอนุมัติ'))kick(m);throw new Error(m)}
   return j;
+}
+window.lstep=k=>{['email','code','wait','pw'].forEach(x=>$('s-'+x).classList.toggle('on',x===k));$('pwlink').style.display=(k==='email')?'':'none';$('lerr').textContent='';
+  const f={email:'em',code:'otp',pw:'pw'}[k];if(f)setTimeout(()=>$(f).focus(),50)};
+function showApp(){
+  const role=ME?.role||'staff';
+  document.body.classList.remove('r-tech','r-staff','r-admin');document.body.classList.add('r-'+role);
+  $('who').innerHTML=ME?`${esc(ME.name||ME.email)} <span class="role ${role}">${ROLE_TH[role]}</span>`:`<span class="role staff">รหัสรวม</span>`;
+  $('login').style.display='none';$('app').style.display='block';route();
+}
+function kick(m){if($('app').style.display!=='none'||PW){PW='';store('aedpw',null);try{sessionStorage.removeItem('aedpw')}catch(e){}}
+  $('app').style.display='none';$('login').style.display='grid';
+  if(ME&&m&&m.includes('ยังไม่ได้รับอนุมัติ')){$('em3').textContent=ME.email;lstep('wait')}else{lstep(ME?'email':'pw');$('lerr').textContent=m||''}}
+window.sendCode=async()=>{
+  const em=$('em').value.trim().toLowerCase();$('lerr').textContent='';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em))return $('lerr').textContent='กรอกอีเมลให้ถูกต้อง';
+  $('bsend').disabled=true;$('bsend').textContent='กำลังส่ง…';
+  const {error}=await sb.auth.signInWithOtp({email:em,options:{shouldCreateUser:true,emailRedirectTo:location.origin+'/fleet'}});
+  $('bsend').disabled=false;$('bsend').textContent='ส่งลิงก์เข้าอีเมล';
+  if(error)return $('lerr').textContent=/rate|seconds/i.test(error.message)?'ขอรหัสถี่เกินไป รอสักครู่แล้วลองใหม่':error.message;
+  store('aedem',em);$('em2').textContent=em;$('otp').value='';lstep('code');
+};
+window.verifyCode=async()=>{
+  const em=$('em').value.trim().toLowerCase(),tk=$('otp').value.replace(/\D/g,'');
+  if(tk.length<6)return $('lerr').textContent='กรอกรหัสที่ได้รับในอีเมล';
+  const {error}=await sb.auth.verifyOtp({email:em,token:tk,type:'email'});
+  if(error)return $('lerr').textContent=/expired|invalid/i.test(error.message)?'รหัสไม่ถูกต้องหรือหมดอายุ — ขอรหัสใหม่':error.message;
+  afterAuth();
+};
+let AUTHING=false;
+window.afterAuth=async()=>{
+  if(AUTHING)return;AUTHING=true;try{await afterAuth0()}finally{AUTHING=false}};
+async function afterAuth0(){
+  try{ME=await rpc('aed_web_whoami');}catch(e){$('lerr').textContent=e.message;return}
+  if(!ME)return lstep('email');
+  if(!['tech','staff','admin'].includes(ME.role)){$('em3').textContent=ME.email;lstep('wait');
+    if(ME.role==='disabled'){$('lerr').textContent='บัญชีนี้ถูกปิดใช้งาน'}return}
+  PW='';try{await load();showApp()}catch(e){$('lerr').textContent=e.message}
 }
 window.login=async()=>{
   PW=$('pw').value.trim(); $('lerr').textContent='';
   if(!PW) return $('lerr').textContent='กรอกรหัสผ่าน';
+  ME=null;
   try{await load(); if($('rem').checked) store('aedpw',PW); else try{sessionStorage.setItem('aedpw',PW)}catch(e){}
-    $('login').style.display='none'; $('app').style.display='block'; route();
+    showApp();
   }catch(e){$('lerr').textContent=e.message}
 };
-window.logout=()=>{PW='';store('aedpw',null);try{sessionStorage.removeItem('aedpw')}catch(e){};$('app').style.display='none';$('login').style.display='grid'};
+window.logout=async()=>{PW='';ME=null;store('aedpw',null);try{sessionStorage.removeItem('aedpw')}catch(e){};
+  try{await sb.auth.signOut()}catch(e){}
+  $('app').style.display='none';$('login').style.display='grid';lstep('email')};
+
+// ---------- users (admin) ----------
+const ACT_TH={device_add:'เพิ่มเครื่อง',device_edit:'แก้ข้อมูลเครื่อง',note:'บันทึกการติดต่อ',usb_upload:'อัปโหลด USB',set_role:'เปลี่ยนสิทธิ์',shared_passcode:'รหัสรวม',bulk:'นำเข้าหลายเครื่อง'};
+const FIELD_TH={label:'ชื่อเครื่อง',customer_name:'ลูกค้า',install_location:'จุดติดตั้ง',customer_contact:'ผู้ติดต่อ',customer_phone:'เบอร์',notes:'บันทึก',active:'ติดตาม',geofence_km:'รัศมี',rental_sync:'ซิงก์ระบบเช่า'};
+function auditDetail(x){const d=x.detail||{};
+  if(x.action==='set_role')return `${esc(d.user)} → ${ROLE_TH[d.role]||esc(d.role)}`;
+  if(x.action==='shared_passcode')return d.enabled?'เปิดใช้':'ปิดใช้';
+  if(x.action==='usb_upload')return `${d.sessions} ครั้ง`;
+  if(x.action==='note')return esc(String(d.changes?.notes?.to||'').split('\n')[0]).slice(0,120);
+  const c=d.changes||{};return Object.keys(c).filter(k=>k!=='notes').map(k=>`${FIELD_TH[k]||k}: ${esc(c[k].from??'–')} → ${esc(c[k].to??'–')}`).join('<br>')||(c.notes?'บันทึก':'');}
+function auditTable(rows){return rows.length?`<table class="ut"><tr><th>เวลา</th><th>ใคร</th><th>ทำอะไร</th><th>เครื่อง</th><th>รายละเอียด</th></tr>${rows.map(x=>{const d=FLEET.find(f=>f.sn===x.sn);
+  return `<tr><td style="white-space:nowrap">${fmt(x.at)}</td><td>${esc(x.actor)}</td><td>${ACT_TH[x.action]||esc(x.action)}</td><td>${x.sn?esc(d?nm(d):x.sn):''}</td><td class="small">${auditDetail(x)}</td></tr>`}).join('')}</table>`:'<div class="empty">ยังไม่มีประวัติ</div>'}
+async function loadUsers(){
+  $('ulist').innerHTML=$('audit').innerHTML='<div class="mut">กำลังโหลด…</div>';
+  try{const [u,a]=await Promise.all([rpc('aed_web_users'),rpc('aed_web_audit',{p_limit:200})]);
+    $('ulist').innerHTML=`<table class="ut"><tr><th>ผู้ใช้</th><th>สิทธิ์</th><th>เข้าล่าสุด</th></tr>${u.map(x=>`<tr><td><b>${esc(x.name||x.email)}</b><div class="mut small">${esc(x.email||'')}</div></td>
+      <td><select style="width:auto;min-height:36px" onchange="setRole('${x.user_id}',this.value,this)" ${ME&&x.email===ME.email?'disabled':''}>${['pending','tech','staff','admin','disabled'].map(r=>`<option value="${r}" ${r===x.role?'selected':''}>${ROLE_TH[r]}</option>`).join('')}</select></td>
+      <td class="small">${x.last_seen_at?ago(x.last_seen_at):'ยังไม่เคย'}</td></tr>`).join('')}</table>`;
+    $('audit').innerHTML=auditTable(a);
+    const h=await rpc('aed_web_health').catch(()=>null);
+    $('pwstate').innerHTML=ME?`<button onclick="pwToggle(${h?.web_pass_enabled===false})">${h?.web_pass_enabled===false?'เปิดรหัสรวมอีกครั้ง':'ปิดรหัสรวม'}</button> <span class="mut small">${h?.web_pass_enabled===false?'ตอนนี้: ปิดอยู่':'ตอนนี้: เปิดอยู่'}</span>`:'<span class="mut small">ต้องเข้าด้วยบัญชีแอดมินจึงจะเปิด/ปิดได้</span>';
+  }catch(e){$('ulist').innerHTML=`<div class="err">${esc(e.message)}</div>`}
+}
+window.setRole=async(id,role,el)=>{try{await rpc('aed_web_user_role',{p_user:id,p_role:role});toast('บันทึกสิทธิ์แล้ว');loadUsers()}catch(e){toast(e.message);loadUsers()}};
+window.pwToggle=async en=>{if(!en&&!confirm('ปิดรหัสรวม? ทุกคนต้องเข้าด้วยอีเมลของตัวเอง'))return;
+  try{await rpc('aed_web_pass_toggle',{p_enabled:en});toast(en?'เปิดรหัสรวมแล้ว':'ปิดรหัสรวมแล้ว');loadUsers()}catch(e){toast(e.message)}};
+window.devAudit=async(sn,btn)=>{const box=btn.nextElementSibling;box.innerHTML='<div class="mut small">กำลังโหลด…</div>';
+  try{box.innerHTML=auditTable(await rpc('aed_web_audit',{p_sn:sn,p_limit:50}))}catch(e){box.innerHTML=`<div class="err">${esc(e.message)}</div>`}};
 
 // status + what to do next
 function assess(d){
@@ -317,6 +444,7 @@ const SL={r:'ต้องดูด่วน',y:'ควรดู',g:'ปกติ
 async function load(){
   const [f,h]=await Promise.all([rpc('aed_web_fleet',{}),rpc('aed_web_health',{}).catch(()=>null)]);
   FLEET=f.filter(d=>!/S\/N ผิด/.test(d.label||'')); HEALTH=h;
+  {const ub=document.querySelector('nav button[data-t=users]');if(ub)ub.textContent=h?.pending_users?`ผู้ใช้ (${h.pending_users} รอ)`:'ผู้ใช้';}
   FLEET.forEach(d=>d._a=assess(d));
   $('upd').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
   render();
@@ -366,15 +494,15 @@ function render(){
 
 window.tab=t=>{
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  ['home','map','alerts','report','usb','bulk','help'].forEach(x=>$('t-'+x).style.display=x===t?'':'none');
+  ['home','map','alerts','report','usb','bulk','users','help'].forEach(x=>$('t-'+x).style.display=x===t?'':'none');
   try{history.replaceState(null,'',t==='home'?location.pathname:'#'+t)}catch(e){}
-  if(t==='map') drawMap(); if(t==='alerts') initAlerts(); if(t==='report') initReport();
+  if(t==='map') drawMap(); if(t==='alerts') initAlerts(); if(t==='report') initReport(); if(t==='users') loadUsers();
 };
 let tvTimer=null;
 function route(){const h=location.hash.slice(1);
   if(h==='monitor'){document.body.classList.add('tv');tab('home');try{history.replaceState(null,'','#monitor')}catch(e){}
     if(!tvTimer)tvTimer=setInterval(()=>load().catch(()=>{}),60000);
-    const c=$('tvclock');const tick=()=>c.textContent=new Date().toLocaleString('th-TH',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});tick();setInterval(tick,30000);return}if(['map','alerts','report','usb','bulk','help'].includes(h))tab(h)}
+    const c=$('tvclock');const tick=()=>c.textContent=new Date().toLocaleString('th-TH',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});tick();setInterval(tick,30000);return}if(['map','alerts','report','usb','bulk','users','help'].includes(h))tab(h)}
 
 function drawMap(){
   if(!map){map=L.map('map').setView([13.75,100.55],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);layer=L.layerGroup().addTo(map)}
@@ -413,9 +541,9 @@ window.openDev=async sn=>{
       ${a.todo.length?`<div style="margin-top:6px"><b>ต้องทำ</b><ol>${a.todo.map(t=>`<li>${esc(t)}</li>`).join('')}</ol></div>`:''}</div>
     <div class="actions" style="flex-wrap:wrap">
       ${d.customer_phone?`<a class="btnlink" style="flex:1" href="tel:${esc(tel(d.customer_phone))}">📞 โทร ${esc(d.customer_phone)}</a>`:''}
-      <button style="flex:1" onclick="openEdit('${esc(d.sn)}')">✏️ แก้ไขข้อมูล</button>
+      <button class="ns" style="flex:1" onclick="openEdit('${esc(d.sn)}')">✏️ แก้ไขข้อมูล</button>
       <button style="flex:1" onclick="sticker('${esc(d.sn)}')">🏷 สติกเกอร์ QR</button>
-      ${d.customer_name?`<button style="flex:1" onclick="custLink('${esc(d.sn)}')">🔗 ลิงก์ให้ลูกค้า</button>`:''}
+      ${d.customer_name?`<button class="ns" style="flex:1" onclick="custLink('${esc(d.sn)}')">🔗 ลิงก์ให้ลูกค้า</button>`:''}
     </div>
     <dl class="kv">
       <dt>ลูกค้า</dt><dd>${esc(d.customer_name||'–')}</dd>
@@ -429,13 +557,14 @@ window.openDev=async sn=>{
       <dt>ติดต่อล่าสุด</dt><dd>${fmt(d.last_seen_at)} (${ago(d.last_seen_at)})</dd>
       <dt>ตำแหน่ง</dt><dd>${d.lat!=null?`<a target="_blank" rel="noopener" href="https://maps.google.com/?q=${d.lat},${d.lng}">เปิดใน Google Maps</a>${d.km_from_home!=null?' · ห่างจุดติดตั้ง '+d.km_from_home+' กม.':''}`:'ยังไม่มีพิกัด'}</dd>
       <dt>สัญญาณ 4G</dt><dd>${d.lte_rssi!=null?d.lte_rssi+' / 5':'–'}</dd>
-      <dt>ลงทะเบียน</dt><dd>${d.subscribed?'✅ เชื่อมกับ Primedic แล้ว':(d.subscribe_error?'❌ ไม่สำเร็จ':'⏳ กำลังลงทะเบียน')}${!d.subscribed?` <button style="min-height:32px;padding:4px 10px;font-size:13px" onclick="resub('${esc(d.sn)}')">ลงทะเบียนใหม่</button>`:''}</dd>
+      <dt>ลงทะเบียน</dt><dd>${d.subscribed?'✅ เชื่อมกับ Primedic แล้ว':(d.subscribe_error?'❌ ไม่สำเร็จ':'⏳ กำลังลงทะเบียน')}${!d.subscribed?` <button class="ns" style="min-height:32px;padding:4px 10px;font-size:13px" onclick="resub('${esc(d.sn)}')">ลงทะเบียนใหม่</button>`:''}</dd>
     </dl>
     <div class="sec">บันทึกการติดต่อ / หมายเหตุ</div>
     <textarea id="nlog" style="min-height:70px" placeholder="เช่น โทรคุณสมใจแล้ว เครื่องอยู่ที่เดิม ถอดแบตใส่ใหม่แล้ว"></textarea>
     <button style="margin-top:8px" onclick="addLog('${esc(d.sn)}')">บันทึก</button>
     ${d.notes?`<div class="log" style="margin-top:10px">${esc(d.notes)}</div>`:''}
     <div class="sec">ประวัติการเปิดเครื่อง (จากไฟล์ USB)</div><div id="d_usb" class="mut">กำลังโหลด…</div>
+    <div class="sec">ประวัติการแก้ไข</div><button style="min-height:34px;padding:4px 10px;font-size:13px" onclick="devAudit('${esc(d.sn)}',this)">ดูว่าใครแก้อะไร</button><div style="overflow-x:auto;margin-top:6px"></div>
     <div class="sec">แจ้งเตือนล่าสุด</div><div id="d_al" class="mut">กำลังโหลด…</div>
     <div class="sec">ข้อมูลที่เครื่องส่งมา</div><div id="d_ev" class="mut">กำลังโหลด…</div>`);
   try{const [al,ev]=await Promise.all([rpc('aed_web_alerts',{p_sn:sn,p_limit:20}),rpc('aed_web_events',{p_sn:sn,p_limit:20})]);
@@ -577,7 +706,7 @@ window.exportCsv=()=>{
 };
 window.render=render;
 window.route=route;
-window.addEventListener('hashchange',()=>{if(location.hash==='#monitor'&&PW)route()});
+window.addEventListener('hashchange',()=>{if(location.hash==='#monitor'&&(PW||ME))route()});
 
 // ---------- USB export reader (runs in the browser only) ----------
 const dur=s=>s==null?'–':s<60?Math.round(s)+' วิ':Math.floor(s/60)+' นาที '+Math.round(s%60)+' วิ';
@@ -668,8 +797,13 @@ window.usbSave=async()=>{
     toast(`บันทึกแล้ว ${r.saved} ครั้ง`);
   }catch(e){toast(e.message)}
 };
-setInterval(()=>{if(PW&&document.visibilityState==='visible')load().catch(()=>{})},5*60*1000);
-const saved=readS('aedpw'); if(saved){$('pw').value=saved;login()}
+setInterval(()=>{if((PW||ME)&&document.visibilityState==='visible')load().catch(()=>{})},5*60*1000);
+$('em').value=readS('aedem')||'';
+(async()=>{const {data}=await sb.auth.getSession();
+  if(data.session){afterAuth();return}
+  const saved=readS('aedpw'); if(saved){$('pw').value=saved;lstep('pw');login();return}
+  lstep('email');})();
+sb.auth.onAuthStateChange((ev,ses)=>{if(ev==='SIGNED_IN'&&ses&&$('app').style.display==='none'&&!$('s-wait').classList.contains('on'))setTimeout(afterAuth,0)});
 }
 </script>
 </body>
